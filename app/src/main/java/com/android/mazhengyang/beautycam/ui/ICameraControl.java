@@ -131,10 +131,4 @@ public interface ICameraControl {
      *前后摄像切换
      */
     void reverseCamera();
-
-    /**
-     * 是否正在处理图片
-     * @param taking
-     */
-    void takingPicture(boolean taking);
 }

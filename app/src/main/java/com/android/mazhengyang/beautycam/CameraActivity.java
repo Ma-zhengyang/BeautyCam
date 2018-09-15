@@ -1,6 +1,7 @@
 package com.android.mazhengyang.beautycam;
 
 import android.Manifest;
+import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -11,25 +12,20 @@ import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.view.Surface;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.android.mazhengyang.beautycam.Animation.RotateAnimation;
 import com.android.mazhengyang.beautycam.Util.SobelUtil;
-import com.android.mazhengyang.beautycam.ui.CameraThreadPool;
 import com.android.mazhengyang.beautycam.ui.CameraView;
 import com.android.mazhengyang.beautycam.ui.PermissionCallback;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import com.wang.avi.AVLoadingIndicatorView;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
-import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 
 /**
@@ -43,16 +39,14 @@ public class CameraActivity extends Activity {
     private static final int PERMISSIONS_REQUEST_CAMERA = 800;
     private static final int PERMISSIONS_EXTERNAL_STORAGE = 801;
 
-    private File outputFile;
-
     private CameraView cameraView;
     private ImageView takePhotoBtn;
     private ImageView reverseCameraBtn;
 
     private ImageView sobelPhoto;
-    private boolean sobelShowing = false;
+    private boolean sobelPhotoShow = false;
 
-    private Disposable mDisposable;
+    private AVLoadingIndicatorView mProgress;
 
     private PermissionCallback permissionCallback = new PermissionCallback() {
         @Override
@@ -80,11 +74,9 @@ public class CameraActivity extends Activity {
         reverseCameraBtn.setOnClickListener(reverseButtonOnClickListener);
 
         sobelPhoto = findViewById(R.id.sobel_photo);
+        mProgress = findViewById(R.id.progress);
 
         setOrientation(getResources().getConfiguration());
-
-        outputFile = new File("outputFilePath");
-
     }
 
     @Override
@@ -99,85 +91,66 @@ public class CameraActivity extends Activity {
         cameraView.start();
     }
 
-    private CameraView.OnTakePictureCallback autoTakePictureCallback = new CameraView.OnTakePictureCallback() {
-        @Override
-        public void onPictureTaken(final Bitmap bitmap) {
-            CameraThreadPool.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        FileOutputStream fileOutputStream = new FileOutputStream(outputFile);
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
-                        bitmap.recycle();
-                        fileOutputStream.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
+    private void setView(boolean taking) {
+        if (taking) {
+            takePhotoBtn.setEnabled(false);
+            reverseCameraBtn.setEnabled(false);
+            mProgress.show();
+        } else {
+            takePhotoBtn.setEnabled(true);
+            reverseCameraBtn.setEnabled(true);
+            mProgress.hide();
         }
-    };
+    }
 
     private View.OnClickListener takeButtonOnClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            cameraView.takePicture(outputFile, takePictureCallback);
+            setView(true);
+            cameraView.takePicture(takePictureCallback);
         }
     };
 
     private View.OnClickListener reverseButtonOnClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
+            RotateAnimation rotateAnimation = new RotateAnimation();
+            ValueAnimator valueAnimator = rotateAnimation.getAnimators(reverseCameraBtn);
+            valueAnimator.setDuration(1000);
+            valueAnimator.start();
             cameraView.reverseCamera();
         }
     };
 
     private CameraView.OnTakePictureCallback takePictureCallback = new CameraView.OnTakePictureCallback() {
-        @Override
-        public void onPictureTaken(final Bitmap bitmap) {
 
-            Log.d(TAG, "onPictureTaken: bitmap=" + bitmap);
+        @Override
+        public void onPictureTaken(final byte[] data) {
 
             Observable.create(new ObservableOnSubscribe<Bitmap>() {
                 @Override
                 public void subscribe(ObservableEmitter<Bitmap> emitter) throws Exception {
+                    long start = System.currentTimeMillis();
+                    Log.d(TAG, "subscribe: start=" + start);
 
-                    if (bitmap != null) {
-                        Bitmap sobel = SobelUtil.doSobel(bitmap);
-                        if (sobel != null) {
-                            emitter.onNext(sobel);
-                        } else {
-                            emitter.onError(new Throwable("bitmap is null"));
-                        }
-                    } else {
-                        emitter.onError(new Throwable("bitmap is null"));
-                    }
+                    Bitmap bitmap = SobelUtil.createBitmap(data);
+
+                    long end = System.currentTimeMillis();
+                    Log.d(TAG, "subscribe: end=" + end);
+
+                    Log.d(TAG, "subscribe: used=" + (end - start));
+
+                    emitter.onNext(bitmap);
                 }
-
             }).observeOn(AndroidSchedulers.mainThread())
                     .subscribeOn(Schedulers.io())
-                    .subscribe(new Observer<Bitmap>() {
+                    .subscribe(new Consumer<Bitmap>() {
                         @Override
-                        public void onSubscribe(Disposable d) {
-                            mDisposable = d;
-                        }
-
-                        @Override
-                        public void onNext(Bitmap bitmap) {
+                        public void accept(Bitmap bitmap) throws Exception {
                             sobelPhoto.setImageBitmap(bitmap);
                             sobelPhoto.setVisibility(View.VISIBLE);
-                            sobelShowing = true;
-                            cameraView.takingPicture(false);
-                        }
-
-                        @Override
-                        public void onError(Throwable e) {
-                            Toast.makeText(CameraActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-
-                        @Override
-                        public void onComplete() {
-
+                            sobelPhotoShow = true;
+                            setView(false);
                         }
                     });
 
@@ -186,22 +159,14 @@ public class CameraActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        if (sobelShowing) {
+        if (sobelPhotoShow) {
             cameraView.start();
             sobelPhoto.setImageBitmap(null);
             sobelPhoto.setVisibility(View.INVISIBLE);
-            sobelShowing = false;
+            sobelPhotoShow = false;
             return;
         }
         super.onBackPressed();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (!mDisposable.isDisposed()) {
-            mDisposable.dispose();
-        }
     }
 
     @Override

@@ -211,11 +211,6 @@ public class Camera1Control implements ICameraControl {
     }
 
     @Override
-    public void takingPicture(boolean taking) {
-        takingPicture.set(taking);
-    }
-
-    @Override
     public View getDisplayView() {
         return displayView;
     }
@@ -223,7 +218,7 @@ public class Camera1Control implements ICameraControl {
     @Override
     public void takePicture(final OnTakePictureCallback onTakePictureCallback) {
         if (takingPicture.get()) {
-            Log.d(TAG, "takePicture: taking Picture, return");
+            Log.d(TAG, "takePicture: return");
             return;
         }
 
@@ -278,6 +273,7 @@ public class Camera1Control implements ICameraControl {
                             if (onTakePictureCallback != null) {
                                 onTakePictureCallback.onPictureTaken(data);
                             }
+                            takingPicture.set(false);
                         }
                     });
                 }

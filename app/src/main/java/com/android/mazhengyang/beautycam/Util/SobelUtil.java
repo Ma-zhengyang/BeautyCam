@@ -1,6 +1,8 @@
 package com.android.mazhengyang.beautycam.Util;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.BitmapRegionDecoder;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorMatrix;
@@ -8,6 +10,8 @@ import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.util.Log;
+
+import java.io.IOException;
 
 /**
  * Created by mazhengyang on 18-9-12.
@@ -49,7 +53,7 @@ public class SobelUtil {
         return bitmap.getPixel(x, y);
     }
 
-    public static Bitmap doSobel(Bitmap bitmap) {
+    private static Bitmap doSobel(Bitmap bitmap) {
 
         bitmap = compress(bitmap, 480, 800);
         Bitmap temp = convertToGrey(bitmap);
@@ -103,7 +107,7 @@ public class SobelUtil {
      * @param bitmap
      * @return
      */
-    public static Bitmap convertToGrey(Bitmap bitmap) {
+    private static Bitmap convertToGrey(Bitmap bitmap) {
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
 
@@ -141,7 +145,7 @@ public class SobelUtil {
      * @param bitmap
      * @return
      */
-    public static Bitmap convertToGrey2(Bitmap bitmap) {
+    private static Bitmap convertToGrey2(Bitmap bitmap) {
 
         int height = bitmap.getHeight();
         int width = bitmap.getWidth();
@@ -166,7 +170,7 @@ public class SobelUtil {
      * @param
      * @return
      */
-    public static Bitmap compress(final Bitmap bitmap, int reqWidth, int reqHeight) {
+    private static Bitmap compress(final Bitmap bitmap, int reqWidth, int reqHeight) {
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
 
@@ -183,6 +187,50 @@ public class SobelUtil {
             return result;
         }
         return bitmap;
+    }
+
+    public static Bitmap createBitmap(final byte[] data){
+
+        final int rotation = ImageUtil.getOrientation(data);
+
+        Log.d(TAG, "createBitmap: rotation=" + rotation);
+
+        // BitmapRegionDecoder不会将整个图片加载到内存。
+        BitmapRegionDecoder decoder = null;
+        try {
+            decoder = BitmapRegionDecoder.newInstance(data, 0, data.length, true);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        BitmapFactory.Options options = new BitmapFactory.Options();
+
+        // 最大图片大小。
+        int maxPreviewImageSize = 2560;
+        int size = Math.min(decoder.getWidth(), decoder.getHeight());
+        size = Math.min(size, maxPreviewImageSize);
+
+        options.inSampleSize = ImageUtil.calculateInSampleSize(options, size, size);
+        options.inScaled = true;
+        options.inDensity = Math.max(options.outWidth, options.outHeight);
+        options.inTargetDensity = size;
+        options.inPreferredConfig = Bitmap.Config.RGB_565;
+        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, options);
+
+        if (rotation != 0) {
+            // 只能是裁剪完之后再旋转了。有没有别的更好的方案呢？
+            Matrix matrix = new Matrix();
+            matrix.postRotate(rotation);
+            Bitmap rotatedBitmap = Bitmap.createBitmap(
+                    bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
+            if (bitmap != rotatedBitmap) {
+                // 有时候 createBitmap会复用对象
+                bitmap.recycle();
+            }
+            bitmap = rotatedBitmap;
+        }
+
+        return doSobel(bitmap);
     }
 
 }

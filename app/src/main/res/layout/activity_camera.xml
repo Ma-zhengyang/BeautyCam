@@ -32,9 +32,9 @@
             android:id="@+id/reverse"
             android:layout_width="30dp"
             android:layout_height="30dp"
-            android:layout_marginRight="20dp"
             android:layout_alignParentRight="true"
             android:layout_centerVertical="true"
+            android:layout_marginRight="20dp"
             android:background="@drawable/ic_camera_front_bb_white_24dp"
             android:clickable="true" />
 
@@ -46,5 +46,14 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="invisible" />
+
+    <com.wang.avi.AVLoadingIndicatorView
+        android:id="@+id/progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="invisible"
+        app:indicatorColor="@color/white"
+        app:indicatorName="BallPulseIndicator" />
 
 </FrameLayout>

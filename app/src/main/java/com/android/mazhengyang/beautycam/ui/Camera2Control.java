@@ -143,11 +143,6 @@ public class Camera2Control implements ICameraControl {
     }
 
     @Override
-    public void takingPicture(boolean taking) {
-
-    }
-
-    @Override
     public View getDisplayView() {
         return textureView;
     }
