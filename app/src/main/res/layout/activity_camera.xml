@@ -6,16 +6,38 @@
     android:layout_height="match_parent"
     tools:context="com.android.mazhengyang.beautycam.CameraActivity">
 
-    <com.android.mazhengyang.beautycam.ui.CameraView
-        android:id="@+id/camera_view"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:layout_marginBottom="70dp">
 
-    </com.android.mazhengyang.beautycam.ui.CameraView>
+        <com.android.mazhengyang.beautycam.ui.CameraView
+            android:id="@+id/camera_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+        </com.android.mazhengyang.beautycam.ui.CameraView>
+
+        <ImageView
+            android:id="@+id/teked_photo"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="invisible" />
+
+        <com.wang.avi.AVLoadingIndicatorView
+            android:id="@+id/progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="invisible"
+            app:indicatorColor="@color/white"
+            app:indicatorName="BallPulseIndicator" />
+    </FrameLayout>
+
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="60dp"
         android:layout_gravity="bottom"
         android:layout_marginBottom="5dp">
 
@@ -37,23 +59,6 @@
             android:layout_marginRight="20dp"
             android:background="@drawable/ic_camera_front_bb_white_24dp"
             android:clickable="true" />
-
     </RelativeLayout>
-
-
-    <ImageView
-        android:id="@+id/sobel_photo"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="invisible" />
-
-    <com.wang.avi.AVLoadingIndicatorView
-        android:id="@+id/progress"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:visibility="invisible"
-        app:indicatorColor="@color/white"
-        app:indicatorName="BallPulseIndicator" />
 
 </FrameLayout>

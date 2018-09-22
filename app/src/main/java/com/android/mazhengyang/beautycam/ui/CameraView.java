@@ -3,6 +3,7 @@ package com.android.mazhengyang.beautycam.ui;
 import android.content.Context;
 import android.support.annotation.IntDef;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
 
@@ -76,13 +77,20 @@ public class CameraView extends FrameLayout implements ICameraControl.OnTakePict
     }
 
     public void start() {
+        Log.d(TAG, "start: ");
         cameraControl.start();
         setKeepScreenOn(true);
     }
 
     public void stop() {
+        Log.d(TAG, "stop: ");
         cameraControl.stop();
         setKeepScreenOn(false);
+    }
+
+    public void canPreview(boolean can){
+        Log.d(TAG, "canPreview: can=" + can);
+        cameraControl.canPreview(can);
     }
 
     public void takePicture(final OnTakePictureCallback callback) {
@@ -103,6 +111,11 @@ public class CameraView extends FrameLayout implements ICameraControl.OnTakePict
 
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        Log.d(TAG, "onLayout: left=" + left);
+        Log.d(TAG, "onLayout: top=0");
+        Log.d(TAG, "onLayout: right=" + right);
+        Log.d(TAG, "onLayout: bottom=" + bottom);
+
         displayView.layout(left, 0, right, bottom - top);
     }
 

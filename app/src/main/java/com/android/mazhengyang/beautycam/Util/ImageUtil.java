@@ -9,7 +9,7 @@ import android.util.Log;
  */
 
 public class ImageUtil {
-    private static final String TAG = "CameraExif";
+    private static final String TAG = "ImageUtil";
 
     public static int exifToDegrees(int exifOrientation) {
         if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_90) {

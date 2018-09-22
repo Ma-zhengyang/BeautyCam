@@ -62,9 +62,11 @@ public interface ICameraControl {
      */
     void stop();
 
-    void pause();
+//    void pause();
+//
+//    void resume();
 
-    void resume();
+    void canPreview(boolean can);
 
     /**
      * 相机对应的预览视图。

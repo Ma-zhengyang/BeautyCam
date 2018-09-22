@@ -127,14 +127,19 @@ public class Camera2Control implements ICameraControl {
         stopBackgroundThread();
     }
 
-    @Override
-    public void pause() {
-        setFlashMode(FLASH_MODE_OFF);
-    }
+//    @Override
+//    public void pause() {
+//        setFlashMode(FLASH_MODE_OFF);
+//    }
+//
+//    @Override
+//    public void resume() {
+//        state = STATE_PREVIEW;
+//    }
 
     @Override
-    public void resume() {
-        state = STATE_PREVIEW;
+    public void canPreview(boolean can){
+
     }
 
     @Override

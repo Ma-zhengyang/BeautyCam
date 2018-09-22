@@ -55,12 +55,14 @@ public class SobelUtil {
 
     private static Bitmap doSobel(Bitmap bitmap) {
 
+        Log.d(TAG, "doSobel: " + bitmap.getWidth() + ", " + bitmap.getHeight());
+
         bitmap = compress(bitmap, 480, 800);
+
         Bitmap temp = convertToGrey(bitmap);
+
         int w = temp.getWidth();
         int h = temp.getHeight();
-
-        Log.d(TAG, "doSobel: w=" + w + ", h=" + h);
 
         int[] mmap = new int[w * h];
         double[] tmap = new double[w * h];
@@ -108,44 +110,6 @@ public class SobelUtil {
      * @return
      */
     private static Bitmap convertToGrey(Bitmap bitmap) {
-        int width = bitmap.getWidth();
-        int height = bitmap.getHeight();
-
-        Log.d(TAG, "convertToGrey: width=" + width);
-        Log.d(TAG, "convertToGrey: height=" + height);
-
-        int[] pixels = new int[width * height];
-
-        Log.d(TAG, "convertToGrey: pixels length=" + pixels.length);
-
-        bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
-        int alpha = 0xFF << 24;
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
-                int grey = pixels[width * i + j];
-
-                int red = ((grey & 0x00FF0000) >> 16);
-                int green = ((grey & 0x0000FF00) >> 8);
-                int blue = (grey & 0x000000FF);
-
-                grey = (int) ((float) red * 0.3 + (float) green * 0.59 + (float) blue * 0.11);
-                grey = alpha | (grey << 16) | (grey << 8) | grey;
-                pixels[width * i + j] = grey;
-            }
-        }
-        Bitmap result = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
-        result.setPixels(pixels, 0, width, 0, 0, width, height);
-        return result;
-    }
-
-
-    /**
-     * 将彩色图转换为灰度图
-     *
-     * @param bitmap
-     * @return
-     */
-    private static Bitmap convertToGrey2(Bitmap bitmap) {
 
         int height = bitmap.getHeight();
         int width = bitmap.getWidth();
@@ -154,7 +118,7 @@ public class SobelUtil {
                 Bitmap.Config.RGB_565);
         Canvas c = new Canvas(b);
         Paint paint = new Paint();
-        ColorMatrix cm = new ColorMatrix();
+        ColorMatrix cm = new ColorMatrix(MatrixUtil.quseMatrix);
         cm.setSaturation(0);
         ColorMatrixColorFilter f = new ColorMatrixColorFilter(cm);
         paint.setColorFilter(f);
