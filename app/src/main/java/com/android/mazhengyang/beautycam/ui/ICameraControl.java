@@ -1,56 +1,29 @@
 package com.android.mazhengyang.beautycam.ui;
 
-import android.graphics.Rect;
-import android.support.annotation.IntDef;
-import android.view.View;
-
-import java.util.concurrent.atomic.AtomicBoolean;
-
 /**
  * Created by mazhengyang on 18-9-13.
  */
 
-/**
- * Android 5.0 相机的API发生很大的变化。些类屏蔽掉了 api的变化。相机的操作和功能，抽象剥离出来。
- */
 public interface ICameraControl {
-
-    /**
-     * 闪光灯关 {@link #setFlashMode(int)}
-     */
-    int FLASH_MODE_OFF = 0;
-    /**
-     * 闪光灯开 {@link #setFlashMode(int)}
-     */
-    int FLASH_MODE_TORCH = 1;
-    /**
-     * 闪光灯自动 {@link #setFlashMode(int)}
-     */
-    int FLASH_MODE_AUTO = 2;
-
-    @IntDef({FLASH_MODE_TORCH, FLASH_MODE_OFF, FLASH_MODE_AUTO})
-    @interface FlashMode {
-
-    }
 
     /**
      * 照相回调。
      */
-    interface OnTakePictureCallback {
+    interface CameraControlCallback {
+        boolean onRequestPermission();
+
         void onPictureTaken(byte[] data);
+
+        void clipEffectView(int left, int top, int right, int bottom);
+
     }
 
-    /**
-     * 设置本地质量控制回调，如果不设置则视为不扫描调用本地质量控制代码。
-     */
-    void setDetectCallback(OnDetectPictureCallback callback);
+    void setCallback(CameraControlCallback callback);
 
     /**
-     * 预览回调
+     * 获取到拍照权限时，调用些函数以继续。
      */
-    interface OnDetectPictureCallback {
-        int onDetect(byte[] data, int rotation);
-    }
+    void refreshPermission();
 
     /**
      * 打开相机。
@@ -62,75 +35,13 @@ public interface ICameraControl {
      */
     void stop();
 
-//    void pause();
-//
-//    void resume();
-
-    void canPreview(boolean can);
-
     /**
-     * 相机对应的预览视图。
-     *
-     * @return 预览视图
+     * 拍照
      */
-    View getDisplayView();
+    void takePicture();
 
     /**
-     * 看到的预览可能不是照片的全部。返回预览视图的全貌。
-     *
-     * @return 预览视图frame;
-     */
-    Rect getPreviewFrame();
-
-    /**
-     * 拍照。结果在回调中获取。
-     *
-     * @param callback 拍照结果回调
-     */
-    void takePicture(OnTakePictureCallback callback);
-
-    /**
-     * 设置权限回调，当手机没有拍照权限时，可在回调中获取。
-     *
-     * @param callback 权限回调
-     */
-    void setPermissionCallback(PermissionCallback callback);
-
-    /**
-     * 设置水平方向
-     *
-     * @param displayOrientation 参数值见 {@link com.android.mazhengyang.beautycam.ui.CameraView.Orientation}
-     */
-    void setDisplayOrientation(@CameraView.Orientation int displayOrientation);
-
-    /**
-     * 获取到拍照权限时，调用些函数以继续。
-     */
-    void refreshPermission();
-
-    /**
-     * 获取已经扫描成功，处理中
-     */
-    AtomicBoolean getAbortingScan();
-
-    /**
-     * 设置闪光灯状态。
-     *
-     * @param flashMode {@link #FLASH_MODE_TORCH,#FLASH_MODE_OFF,#FLASH_MODE_AUTO}
-     */
-    void setFlashMode(@FlashMode int flashMode);
-
-    /**
-     * 获取当前闪光灯状态
-     *
-     * @return 当前闪光灯状态 参见 {@link #setFlashMode(int)}
-     */
-    @FlashMode
-    int getFlashMode();
-
-
-    /**
-     *前后摄像切换
+     * 前后摄像切换
      */
     void reverseCamera();
 }

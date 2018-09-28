@@ -6,117 +6,131 @@ import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
-import android.view.Surface;
+import android.view.TextureView;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.RadioGroup;
 import android.widget.Toast;
 
-import com.android.mazhengyang.beautycam.Animation.RotateAnimation;
-import com.android.mazhengyang.beautycam.Util.SobelUtil;
-import com.android.mazhengyang.beautycam.ui.CameraView;
-import com.android.mazhengyang.beautycam.ui.PermissionCallback;
+import com.android.mazhengyang.beautycam.animation.RotateAnimation;
+import com.android.mazhengyang.beautycam.ui.CameraControl;
+import com.android.mazhengyang.beautycam.ui.ICameraControl;
+import com.android.mazhengyang.beautycam.ui.rain.RainView;
+import com.android.mazhengyang.beautycam.ui.snow.SnowView;
+import com.android.mazhengyang.beautycam.util.EffectUtil;
+import com.jeremyfeinstein.slidingmenu.lib.SlidingMenu;
 import com.wang.avi.AVLoadingIndicatorView;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
-import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 
 /**
  * Created by mazhengyang on 18-9-13.
  */
 
-public class CameraActivity extends Activity {
+public class CameraActivity extends Activity implements ICameraControl.CameraControlCallback {
 
     private static final String TAG = CameraActivity.class.getSimpleName();
 
-    private static final int PERMISSIONS_REQUEST_CAMERA = 800;
-    private static final int PERMISSIONS_EXTERNAL_STORAGE = 801;
+    private static final int PERMISSIONS_REQUEST_CAMERA = 1024;
+    private static final int PERMISSIONS_EXTERNAL_STORAGE = 1025;
 
-    private CameraView cameraView;
+    private View mControlTake, mControlEffect;
+    private ICameraControl cameraControl;
+    private SnowView snowView;
+    private RainView rainView;
     private ImageView takePhotoBtn;
     private ImageView reverseCameraBtn;
-
+    private ImageView cancelBtn;
+    private ImageView confirmBtn;
     private ImageView mPhotoView;
-    private boolean mShowed = false;
+    private boolean photoShow = false;
+    private EffectUtil.EFFECT mEffect = EffectUtil.EFFECT.ORIGINAL;
     private AVLoadingIndicatorView mProgress;
-
-    private Disposable mDisposable;
-
-    private PermissionCallback permissionCallback = new PermissionCallback() {
-        @Override
-        public boolean onRequestPermission() {
-            ActivityCompat.requestPermissions(CameraActivity.this,
-                    new String[]{Manifest.permission.CAMERA},
-                    PERMISSIONS_REQUEST_CAMERA);
-            return false;
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_camera);
 
         Point size = new Point();
         getWindowManager().getDefaultDisplay().getSize(size);
         Log.d(TAG, "onCreate: display size=" + size.x + "x" + size.y);
 
-        cameraView = findViewById(R.id.camera_view);
-        cameraView.getCameraControl().setPermissionCallback(permissionCallback);
-
-        takePhotoBtn = findViewById(R.id.take_photo_button);
-        takePhotoBtn.setOnClickListener(takeButtonOnClickListener);
-
-        reverseCameraBtn = findViewById(R.id.reverse);
-        reverseCameraBtn.setOnClickListener(reverseButtonOnClickListener);
-
-        mPhotoView = findViewById(R.id.teked_photo);
-        mProgress = findViewById(R.id.progress);
-
-        setOrientation(getResources().getConfiguration());
-    }
-
-    @Override
-    protected void onResume() {
-        Log.d(TAG, "onResume: ");
-        super.onResume();
-        if (!mShowed && mDisposable == null) {
-            cameraView.start();
-        }
+        initView();
     }
 
     @Override
     protected void onPause() {
-        Log.d(TAG, "onPause: ");
         super.onPause();
-        if (!mShowed) {
-            cameraView.stop();
-        }
+        cameraControl.stop();
     }
 
     @Override
-    protected void onDestroy() {
-        Log.d(TAG, "onDestroy: ");
-        super.onDestroy();
-        if (mDisposable != null && !mDisposable.isDisposed()) {
-            Log.d(TAG, "onDestroy: dispose");
-            mDisposable.dispose();
-            mDisposable = null;
-        }
+    protected void onResume() {
+        super.onResume();
+        cameraControl.start();
     }
 
-    private View.OnClickListener takeButtonOnClickListener = new View.OnClickListener() {
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        Log.d(TAG, "onConfigurationChanged: ");
+    }
+
+    private void initView() {
+        SlidingMenu menu = new SlidingMenu(this);
+        menu.setMode(SlidingMenu.LEFT);
+        menu.setTouchModeAbove(SlidingMenu.TOUCHMODE_FULLSCREEN);
+        menu.setShadowWidthRes(R.dimen.shadow_width);
+//        menu.setShadowDrawable(R.drawable.shadow);
+        menu.setBehindOffsetRes(R.dimen.slidingmenu_offset);
+        menu.setFadeDegree(0.35f);
+        menu.attachToActivity(this, SlidingMenu.SLIDING_CONTENT);
+        menu.setMenu(R.layout.slidemenu_layout);
+
+        TextureView textureView = findViewById(R.id.camera_textureview);
+        cameraControl = new CameraControl(this, textureView);
+        cameraControl.setCallback(this);
+
+        takePhotoBtn = findViewById(R.id.take_photo_button);
+        takePhotoBtn.setOnClickListener(takeBtnClickListener);
+
+        reverseCameraBtn = findViewById(R.id.reverse_camera_button);
+        reverseCameraBtn.setOnClickListener(reverseBtnClickListener);
+
+        cancelBtn = findViewById(R.id.btn_cancel);
+        cancelBtn.setOnClickListener(cancelBtnClickListener);
+
+        confirmBtn = findViewById(R.id.btn_confirm);
+        confirmBtn.setOnClickListener(confirmBtnClickListener);
+
+        RadioGroup radioGroup = findViewById(R.id.radioGroup);
+        radioGroup.setOnCheckedChangeListener(onCheckedChangeListener);
+
+        mPhotoView = findViewById(R.id.taked_photo);
+        mProgress = findViewById(R.id.progress);
+
+        mControlTake = findViewById(R.id.control_take);
+        mControlEffect = findViewById(R.id.control_effect);
+
+        snowView = findViewById(R.id.snow_view);
+        rainView = findViewById(R.id.rain_view);
+    }
+
+    private View.OnClickListener takeBtnClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
 
@@ -124,136 +138,98 @@ public class CameraActivity extends Activity {
             reverseCameraBtn.setEnabled(false);
             mProgress.show();
 
-            cameraView.takePicture(takePictureCallback);
+            cameraControl.takePicture();
         }
     };
 
-    private View.OnClickListener reverseButtonOnClickListener = new View.OnClickListener() {
+    private View.OnClickListener reverseBtnClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             RotateAnimation rotateAnimation = new RotateAnimation();
             ValueAnimator valueAnimator = rotateAnimation.getAnimators(reverseCameraBtn);
             valueAnimator.setDuration(1000);
             valueAnimator.start();
-            cameraView.reverseCamera();
+            cameraControl.reverseCamera();
         }
     };
 
-    private CameraView.OnTakePictureCallback takePictureCallback = new CameraView.OnTakePictureCallback() {
+    private View.OnClickListener cancelBtnClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            back();
+        }
+    };
+
+    private View.OnClickListener confirmBtnClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+
+        }
+    };
+
+    private RadioGroup.OnCheckedChangeListener onCheckedChangeListener = new RadioGroup.OnCheckedChangeListener() {
 
         @Override
-        public void onPictureTaken(final byte[] data) {
-
-            Observable.create(new ObservableOnSubscribe<Bitmap>() {
-                @Override
-                public void subscribe(ObservableEmitter<Bitmap> emitter) throws Exception {
-
-                    if(data == null){
-                        emitter.onError(new Throwable("data is null."));
-                    }
-
-                    cameraView.canPreview(false);
-
-                    long start = System.currentTimeMillis();
-                    Log.d(TAG, "subscribe: start=" + start);
-
-                    Bitmap bitmap = SobelUtil.createBitmap(data);
-
-                    long end = System.currentTimeMillis();
-                    Log.d(TAG, "subscribe: end=" + end + ", used=" + (end - start));
-
-                    emitter.onNext(bitmap);
-                }
-            }).observeOn(AndroidSchedulers.mainThread())
-                    .subscribeOn(Schedulers.io())
-                    .subscribe(new Observer<Bitmap>() {
-                        @Override
-                        public void onSubscribe(Disposable d) {
-                            Log.d(TAG, "onSubscribe: ");
-                            mDisposable = d;
-                        }
-
-                        @Override
-                        public void onNext(Bitmap bitmap) {
-                            Log.d(TAG, "onNext: ");
-                            mPhotoView.setBackgroundColor(Color.GRAY);
-                            mPhotoView.setImageBitmap(bitmap);
-                            mPhotoView.setVisibility(View.VISIBLE);
-                            mShowed = true;
-                            mProgress.hide();
-                            mDisposable = null;
-                        }
-
-                        @Override
-                        public void onError(Throwable e) {
-                            Log.e(TAG, "onError: " + e);
-                        }
-
-                        @Override
-                        public void onComplete() {
-                            Log.d(TAG, "onComplete: ");
-                        }
-                    });
-
+        public void onCheckedChanged(RadioGroup group, int checkedId) {
+            snowView.hide();
+            rainView.hide();
+            int id = group.getCheckedRadioButtonId();
+            switch (id) {
+                case R.id.radio_original:
+                    mEffect = EffectUtil.EFFECT.ORIGINAL;
+                    break;
+                case R.id.radio_sketch:
+                    mEffect = EffectUtil.EFFECT.SKETCH;
+                    break;
+                case R.id.radio_gray:
+                    mEffect = EffectUtil.EFFECT.GRAY;
+                    break;
+                case R.id.radio_reverse:
+                    mEffect = EffectUtil.EFFECT.REVERSE;
+                    break;
+                case R.id.radio_pasttime:
+                    mEffect = EffectUtil.EFFECT.PASTTIME;
+                    break;
+                case R.id.radio_snow:
+                    snowView.show();
+                    break;
+                case R.id.radio_rain:
+                    rainView.show();
+                    break;
+                default:
+                    break;
+            }
         }
     };
+
+    private void back() {
+        mControlTake.setVisibility(View.VISIBLE);
+        mControlEffect.setVisibility(View.INVISIBLE);
+        takePhotoBtn.setEnabled(true);
+        reverseCameraBtn.setEnabled(true);
+        mProgress.hide();
+
+        cameraControl.start();
+        mPhotoView.setImageBitmap(null);
+        mPhotoView.setVisibility(View.INVISIBLE);
+        photoShow = false;
+    }
 
     @Override
     public void onBackPressed() {
-        if (mDisposable != null && !mDisposable.isDisposed()) {
-            Log.d(TAG, "onBackPressed: dispose");
-            mDisposable.dispose();
-            mDisposable = null;
-            reset();
-            return;
-        }
-        if (mShowed) {
-            Log.d(TAG, "onBackPressed: mShowed");
-            reset();
+        if (photoShow) {
+            back();
             return;
         }
         super.onBackPressed();
     }
 
-    private void reset() {
-        Log.d(TAG, "reset:");
-
-        mPhotoView.setBackgroundColor(Color.TRANSPARENT);
-        mPhotoView.setImageBitmap(null);
-        mPhotoView.setVisibility(View.INVISIBLE);
-        mShowed = false;
-        takePhotoBtn.setEnabled(true);
-        reverseCameraBtn.setEnabled(true);
-        mProgress.hide();
-        cameraView.canPreview(true);
-        cameraView.start();
-    }
-
     @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        setOrientation(newConfig);
-    }
-
-    private void setOrientation(Configuration newConfig) {
-        int rotation = getWindowManager().getDefaultDisplay().getRotation();
-        int cameraViewOrientation = CameraView.ORIENTATION_PORTRAIT;
-        switch (newConfig.orientation) {
-            case Configuration.ORIENTATION_PORTRAIT:
-                cameraViewOrientation = CameraView.ORIENTATION_PORTRAIT;
-                break;
-            case Configuration.ORIENTATION_LANDSCAPE:
-                if (rotation == Surface.ROTATION_0 || rotation == Surface.ROTATION_90) {
-                    cameraViewOrientation = CameraView.ORIENTATION_HORIZONTAL;
-                } else {
-                    cameraViewOrientation = CameraView.ORIENTATION_INVERT;
-                }
-                break;
-            default:
-                cameraView.setOrientation(CameraView.ORIENTATION_PORTRAIT);
-                break;
-        }
-        cameraView.setOrientation(cameraViewOrientation);
+    public boolean onRequestPermission() {
+        ActivityCompat.requestPermissions(CameraActivity.this,
+                new String[]{Manifest.permission.CAMERA},
+                PERMISSIONS_REQUEST_CAMERA);
+        return false;
     }
 
     @Override
@@ -263,7 +239,7 @@ public class CameraActivity extends Activity {
         switch (requestCode) {
             case PERMISSIONS_REQUEST_CAMERA: {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    cameraView.getCameraControl().refreshPermission();
+                    cameraControl.refreshPermission();
                 } else {
                     Toast.makeText(getApplicationContext(), "camera_permission_required", Toast.LENGTH_LONG)
                             .show();
@@ -274,6 +250,45 @@ public class CameraActivity extends Activity {
             default:
                 break;
         }
+    }
+
+    @Override
+    public void onPictureTaken(final byte[] data) {
+        Observable.create(new ObservableOnSubscribe<Bitmap>() {
+            @Override
+            public void subscribe(ObservableEmitter<Bitmap> emitter) throws Exception {
+                long start = System.currentTimeMillis();
+                Log.d(TAG, "subscribe: start=" + start);
+
+                Bitmap bitmap = EffectUtil.createBitmap(mEffect, data);
+
+                long end = System.currentTimeMillis();
+                Log.d(TAG, "subscribe: end=" + end + ", used=" + (end - start));
+
+                emitter.onNext(bitmap);
+            }
+        }).observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io())
+                .subscribe(new Consumer<Bitmap>() {
+                    @Override
+                    public void accept(Bitmap bitmap) throws Exception {
+                        Log.d(TAG, "accept: bitmap " + bitmap.getWidth() + "x" + bitmap.getHeight());
+                        mControlTake.setVisibility(View.INVISIBLE);
+                        mControlEffect.setVisibility(View.VISIBLE);
+                        mPhotoView.setImageBitmap(bitmap);
+                        mPhotoView.setVisibility(View.VISIBLE);
+                        photoShow = true;
+                        mProgress.hide();
+                    }
+                });
+
+    }
+
+    @Override
+    public void clipEffectView(int left, int top, int right, int bottom) {
+
+        snowView.clip(left, top, right, bottom);
+        rainView.clip(left, top, right, bottom);
     }
 
 }

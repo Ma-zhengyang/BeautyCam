@@ -1,4 +1,4 @@
-package com.android.mazhengyang.beautycam.Util;
+package com.android.mazhengyang.beautycam.util;
 
 import android.graphics.BitmapFactory;
 import android.media.ExifInterface;

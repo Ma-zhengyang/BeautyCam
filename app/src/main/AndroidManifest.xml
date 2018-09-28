@@ -19,6 +19,7 @@
         android:theme="@style/AppTheme">
         <activity android:name=".CameraActivity"
             android:configChanges="screenSize|orientation"
+            android:screenOrientation="portrait"
             android:theme="@android:style/Theme.Holo.NoActionBar.Fullscreen">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

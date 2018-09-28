@@ -1,4 +1,4 @@
-package com.android.mazhengyang.beautycam.Animation;
+package com.android.mazhengyang.beautycam.animation;
 
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;

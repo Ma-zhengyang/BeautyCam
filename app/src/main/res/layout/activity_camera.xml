@@ -9,19 +9,28 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="70dp">
+        android:layout_marginBottom="66dp">
 
-        <com.android.mazhengyang.beautycam.ui.CameraView
-            android:id="@+id/camera_view"
+        <TextureView
+            android:id="@+id/camera_textureview"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent" />
 
-        </com.android.mazhengyang.beautycam.ui.CameraView>
+        <com.android.mazhengyang.beautycam.ui.snow.SnowView
+            android:id="@+id/snow_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <com.android.mazhengyang.beautycam.ui.rain.RainView
+            android:id="@+id/rain_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
         <ImageView
-            android:id="@+id/teked_photo"
+            android:id="@+id/taked_photo"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:background="@color/black"
             android:visibility="invisible" />
 
         <com.wang.avi.AVLoadingIndicatorView
@@ -35,30 +44,6 @@
     </FrameLayout>
 
 
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_gravity="bottom"
-        android:layout_marginBottom="5dp">
-
-        <ImageView
-            android:id="@+id/take_photo_button"
-            android:layout_width="58dp"
-            android:layout_height="58dp"
-            android:layout_centerInParent="true"
-            android:layout_centerVertical="true"
-            android:background="@drawable/bd_ocr_take_photo_selector"
-            android:clickable="true" />
-
-        <ImageView
-            android:id="@+id/reverse"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:layout_alignParentRight="true"
-            android:layout_centerVertical="true"
-            android:layout_marginRight="20dp"
-            android:background="@drawable/ic_camera_front_bb_white_24dp"
-            android:clickable="true" />
-    </RelativeLayout>
+    <include layout="@layout/control_btn_layout" />
 
 </FrameLayout>
