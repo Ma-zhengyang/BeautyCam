@@ -13,9 +13,6 @@ public interface ICameraControl {
         boolean onRequestPermission();
 
         void onPictureTaken(byte[] data);
-
-        void clipEffectView(int left, int top, int right, int bottom);
-
     }
 
     void setCallback(CameraControlCallback callback);
@@ -38,7 +35,7 @@ public interface ICameraControl {
     /**
      * 拍照
      */
-    void takePicture();
+    void capture();
 
     /**
      * 前后摄像切换

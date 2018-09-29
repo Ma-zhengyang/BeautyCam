@@ -97,6 +97,7 @@ public class CameraControl implements ICameraControl {
             camera = null;
             tempC.release();
             camera = null;
+            parameters = null;
         } else {
             Log.d(TAG, "stop: camera is null.");
         }
@@ -207,10 +208,6 @@ public class CameraControl implements ICameraControl {
                 setTransformMatrix(width, height);
                 mAspectRatioResize = false;
 
-                if (callback != null) {
-//                    callback.clipEffectView(0, 0, width, height);
-                }
-
                 Log.d(TAG, "onLayoutChange: mPreviewWidth=" + mPreviewWidth + ", mPreviewHeight=" + mPreviewHeight);
             }
         }
@@ -257,11 +254,7 @@ public class CameraControl implements ICameraControl {
                 synchronized (CameraControl.this) {
                     if (camera != null) {
                         try {
-                            camera.autoFocus(new Camera.AutoFocusCallback() {
-                                @Override
-                                public void onAutoFocus(boolean success, Camera camera) {
-                                }
-                            });
+                            camera.autoFocus(mAutoFocusCallback);
                         } catch (Throwable e) {
                             // startPreview是异步实现，可能在某些机器上前几次调用会autofocus fail
                         }
@@ -438,7 +431,7 @@ public class CameraControl implements ICameraControl {
     }
 
     @Override
-    public void takePicture() {
+    public void capture() {
 
         switch (displayOrientation) {
             case ORIENTATION_PORTRAIT:
@@ -485,14 +478,8 @@ public class CameraControl implements ICameraControl {
 
             cancelAutoFocus();
 
-            camera.takePicture(null, null, new Camera.PictureCallback() {
-                @Override
-                public void onPictureTaken(byte[] data, Camera camera) {
-                    if (callback != null) {
-                        callback.onPictureTaken(data);
-                    }
-                }
-            });
+            camera.takePicture(mShutterCallback, mRawPictureCallback,
+                    new JpegPictureCallback());
 
         } catch (RuntimeException e) {
             e.printStackTrace();
@@ -500,5 +487,38 @@ public class CameraControl implements ICameraControl {
         }
     }
 
+    private final ShutterCallback mShutterCallback = new ShutterCallback();
+    private final RawPictureCallback mRawPictureCallback =
+            new RawPictureCallback();
+    private final AutoFocusCallback mAutoFocusCallback =
+            new AutoFocusCallback();
 
+    private final class ShutterCallback
+            implements android.hardware.Camera.ShutterCallback {
+        public void onShutter() {
+        }
+    }
+
+    private final class RawPictureCallback implements Camera.PictureCallback {
+        public void onPictureTaken(
+                byte[] rawData, android.hardware.Camera camera) {
+        }
+    }
+
+    private final class JpegPictureCallback implements Camera.PictureCallback {
+        @Override
+        public void onPictureTaken(byte[] data, Camera camera) {
+            if (callback != null) {
+                callback.onPictureTaken(data);
+            }
+        }
+    }
+
+    private final class AutoFocusCallback
+            implements android.hardware.Camera.AutoFocusCallback {
+        @Override
+        public void onAutoFocus(boolean success, Camera camera) {
+            Log.d(TAG, "onAutoFocus: ");
+        }
+    }
 }

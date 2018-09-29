@@ -16,9 +16,15 @@ import java.io.IOException;
  * Created by mazhengyang on 18-9-28.
  */
 
-public class EffectUtil {
+public class EffectFactory {
 
-    private static final String TAG = EffectUtil.class.getSimpleName();
+    private static final String TAG = EffectFactory.class.getSimpleName();
+
+    private SobelUtil sobelUtil;
+
+    public EffectFactory() {
+        sobelUtil = new SobelUtil();
+    }
 
     /**
      * 颜色矩阵              颜色分量矩阵
@@ -39,6 +45,7 @@ public class EffectUtil {
      * 第四行的 pqrst 用来决定新的颜色值中的A——透明度
      * 矩阵A中第五列——ejot值分别用来决定每个分量中的 offset ，即偏移量
      */
+
 
     //初始颜色矩阵
     public static float[] normalMatrix = new float[]{
@@ -74,44 +81,48 @@ public class EffectUtil {
             0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
     };
 
-    //
-    public static float[] quseMatrix = new float[]{
-            1.5f, 1.5f, 1.5f, 0, -1,
-            1.5f, 1.5f, 1.5f, 0, -1,
-            1.5f, 1.5f, 1.5f, 0, -1,
+    //高饱和度
+    public static float[] highSaturationMatrix = new float[]{
+            1.438F, -0.122F, -0.016F, 0, -0.03F,
+            -0.062F, 1.378F, -0.016F, 0, 0.05F,
+            -0.062F, -0.122F, 1.483F, 0, -0.02F,
             0, 0, 0, 1, 0,
     };
 
-    public enum EFFECT {
-        ORIGINAL, SKETCH, GRAY, REVERSE, PASTTIME
+    public void breakData() {
+        sobelUtil.setStop(true);
     }
 
-    public static Bitmap createBitmap(EFFECT type, byte[] data) {
+    public Bitmap createBitmap(int effect, byte[] data) {
 
-        Log.d(TAG, "createBitmap: effect=" + type);
+        Log.d(TAG, "createBitmap: effect=" + effect);
 
         Bitmap bitmap = createOriginal(data);
 
-        switch (type) {
-            case SKETCH:
+        switch (effect) {
+            case Effect.SKETCH:
+                sobelUtil.setStop(false);
                 bitmap = compress(bitmap, 480, 800);
                 Bitmap temp = createEffect(bitmap, grayMatrix);
-                Bitmap newBitmap = SobelUtil.createSobel(temp);
+                Bitmap newBitmap = sobelUtil.createSobel(temp);
                 if (!bitmap.isRecycled()) {
                     Log.d(TAG, "sobel: recycle bitmap");
                     bitmap.recycle();
                 }
                 return newBitmap;
-            case GRAY:
+            case Effect.GRAY:
                 bitmap = createEffect(bitmap, grayMatrix);
                 break;
-            case REVERSE:
+            case Effect.REVERSE:
                 bitmap = createEffect(bitmap, reverseMatrix);
                 break;
-            case PASTTIME:
+            case Effect.PASTTIME:
                 bitmap = createEffect(bitmap, pasttimeMatrix);
                 break;
-            case ORIGINAL:
+            case Effect.HIGHSATURATION:
+                bitmap = createEffect(bitmap, highSaturationMatrix);
+                break;
+            case Effect.ORIGINAL:
             default:
                 break;
         }
@@ -120,7 +131,7 @@ public class EffectUtil {
     }
 
 
-    private static Bitmap createOriginal(final byte[] data) {
+    private Bitmap createOriginal(final byte[] data) {
 
         final int rotation = ImageUtil.getOrientation(data);
 
@@ -169,21 +180,16 @@ public class EffectUtil {
      * @param matrix
      * @return
      */
-    public static Bitmap createEffect(Bitmap bitmap, float[] matrix) {
+    public Bitmap createEffect(Bitmap bitmap, float[] matrix) {
 
-        int height = bitmap.getHeight();
-        int width = bitmap.getWidth();
-
-        Bitmap b = Bitmap.createBitmap(width, height,
-                Bitmap.Config.ARGB_8888);
-        Canvas c = new Canvas(b);
+        Bitmap bmp = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
+        ColorMatrix colorMatrix = new ColorMatrix();
+        colorMatrix.set(matrix);
+        Canvas canvas = new Canvas(bmp);
         Paint paint = new Paint();
-        ColorMatrix cm = new ColorMatrix(matrix);
-        cm.setSaturation(0);
-        ColorMatrixColorFilter f = new ColorMatrixColorFilter(cm);
-        paint.setColorFilter(f);
-        c.drawBitmap(bitmap, 0, 0, paint);
-        return b;
+        paint.setColorFilter(new ColorMatrixColorFilter(colorMatrix));
+        canvas.drawBitmap(bitmap, 0, 0, paint);
+        return bmp;
     }
 
 
@@ -195,7 +201,7 @@ public class EffectUtil {
      * @param
      * @return
      */
-    private static Bitmap compress(final Bitmap bitmap, int reqWidth, int reqHeight) {
+    private Bitmap compress(final Bitmap bitmap, int reqWidth, int reqHeight) {
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
 

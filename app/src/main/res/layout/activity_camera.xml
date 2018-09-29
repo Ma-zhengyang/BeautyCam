@@ -16,21 +16,13 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <com.android.mazhengyang.beautycam.ui.snow.SnowView
-            android:id="@+id/snow_view"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-        <com.android.mazhengyang.beautycam.ui.rain.RainView
-            android:id="@+id/rain_view"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+        <include layout="@layout/effect_view_layout"/>
 
         <ImageView
             android:id="@+id/taked_photo"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/black"
+            android:padding="10dp"
             android:visibility="invisible" />
 
         <com.wang.avi.AVLoadingIndicatorView
@@ -39,7 +31,6 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:visibility="invisible"
-            app:indicatorColor="@color/white"
             app:indicatorName="BallPulseIndicator" />
     </FrameLayout>
 

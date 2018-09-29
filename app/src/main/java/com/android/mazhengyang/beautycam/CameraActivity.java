@@ -1,11 +1,14 @@
 package com.android.mazhengyang.beautycam;
 
 import android.Manifest;
+import android.animation.Animator;
+import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -19,14 +22,18 @@ import android.widget.RadioGroup;
 import android.widget.Toast;
 
 import com.android.mazhengyang.beautycam.animation.RotateAnimation;
+import com.android.mazhengyang.beautycam.animation.ScaleAnimation;
 import com.android.mazhengyang.beautycam.ui.CameraControl;
 import com.android.mazhengyang.beautycam.ui.ICameraControl;
 import com.android.mazhengyang.beautycam.ui.rain.RainView;
 import com.android.mazhengyang.beautycam.ui.snow.SnowView;
-import com.android.mazhengyang.beautycam.util.EffectUtil;
+import com.android.mazhengyang.beautycam.util.Effect;
+import com.android.mazhengyang.beautycam.util.EffectFactory;
 import com.jeremyfeinstein.slidingmenu.lib.SlidingMenu;
 import com.wang.avi.AVLoadingIndicatorView;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
@@ -45,18 +52,31 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
     private static final int PERMISSIONS_REQUEST_CAMERA = 1024;
     private static final int PERMISSIONS_EXTERNAL_STORAGE = 1025;
 
-    private View mControlTake, mControlEffect;
+    private static final int STATE_IDLE = 0;
+    private static final int STATE_TAKING = 1;
+    private static final int STATE_TAKED = 2;
+    private int mState = STATE_IDLE;
+
+    private int mEffect = 0;
     private ICameraControl cameraControl;
-    private SnowView snowView;
-    private RainView rainView;
-    private ImageView takePhotoBtn;
-    private ImageView reverseCameraBtn;
-    private ImageView cancelBtn;
-    private ImageView confirmBtn;
-    private ImageView mPhotoView;
-    private boolean photoShow = false;
-    private EffectUtil.EFFECT mEffect = EffectUtil.EFFECT.ORIGINAL;
-    private AVLoadingIndicatorView mProgress;
+    private EffectFactory mEffectFactory;
+
+    @BindView(R.id.control_shutter)
+    View mControlShutter;
+    @BindView(R.id.control_effect)
+    View mControlEffect;
+    @BindView(R.id.btn_shutter)
+    ImageView mShutterButton;
+    @BindView(R.id.btn_reverse)
+    ImageView reverseCameraBtn;
+    @BindView(R.id.taked_photo)
+    ImageView mPhotoView;
+    @BindView(R.id.progress)
+    AVLoadingIndicatorView mProgress;
+    @BindView(R.id.snow_view)
+    SnowView snowView;
+    @BindView(R.id.rain_view)
+    RainView rainView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,12 +84,19 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_camera);
+        ButterKnife.bind(this);
 
         Point size = new Point();
         getWindowManager().getDefaultDisplay().getSize(size);
         Log.d(TAG, "onCreate: display size=" + size.x + "x" + size.y);
 
-        initView();
+        TextureView textureView = findViewById(R.id.camera_textureview);
+        cameraControl = new CameraControl(this, textureView);
+        cameraControl.setCallback(this);
+
+        mEffectFactory = new EffectFactory();
+
+        initSlidingMenu();
     }
 
     @Override
@@ -90,138 +117,23 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
         Log.d(TAG, "onConfigurationChanged: ");
     }
 
-    private void initView() {
-        SlidingMenu menu = new SlidingMenu(this);
-        menu.setMode(SlidingMenu.LEFT);
-        menu.setTouchModeAbove(SlidingMenu.TOUCHMODE_FULLSCREEN);
-        menu.setShadowWidthRes(R.dimen.shadow_width);
-//        menu.setShadowDrawable(R.drawable.shadow);
-        menu.setBehindOffsetRes(R.dimen.slidingmenu_offset);
-        menu.setFadeDegree(0.35f);
-        menu.attachToActivity(this, SlidingMenu.SLIDING_CONTENT);
-        menu.setMenu(R.layout.slidemenu_layout);
-
-        TextureView textureView = findViewById(R.id.camera_textureview);
-        cameraControl = new CameraControl(this, textureView);
-        cameraControl.setCallback(this);
-
-        takePhotoBtn = findViewById(R.id.take_photo_button);
-        takePhotoBtn.setOnClickListener(takeBtnClickListener);
-
-        reverseCameraBtn = findViewById(R.id.reverse_camera_button);
-        reverseCameraBtn.setOnClickListener(reverseBtnClickListener);
-
-        cancelBtn = findViewById(R.id.btn_cancel);
-        cancelBtn.setOnClickListener(cancelBtnClickListener);
-
-        confirmBtn = findViewById(R.id.btn_confirm);
-        confirmBtn.setOnClickListener(confirmBtnClickListener);
-
-        RadioGroup radioGroup = findViewById(R.id.radioGroup);
-        radioGroup.setOnCheckedChangeListener(onCheckedChangeListener);
-
-        mPhotoView = findViewById(R.id.taked_photo);
-        mProgress = findViewById(R.id.progress);
-
-        mControlTake = findViewById(R.id.control_take);
-        mControlEffect = findViewById(R.id.control_effect);
-
-        snowView = findViewById(R.id.snow_view);
-        rainView = findViewById(R.id.rain_view);
-    }
-
-    private View.OnClickListener takeBtnClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-
-            takePhotoBtn.setEnabled(false);
-            reverseCameraBtn.setEnabled(false);
-            mProgress.show();
-
-            cameraControl.takePicture();
-        }
-    };
-
-    private View.OnClickListener reverseBtnClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            RotateAnimation rotateAnimation = new RotateAnimation();
-            ValueAnimator valueAnimator = rotateAnimation.getAnimators(reverseCameraBtn);
-            valueAnimator.setDuration(1000);
-            valueAnimator.start();
-            cameraControl.reverseCamera();
-        }
-    };
-
-    private View.OnClickListener cancelBtnClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            back();
-        }
-    };
-
-    private View.OnClickListener confirmBtnClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-
-        }
-    };
-
-    private RadioGroup.OnCheckedChangeListener onCheckedChangeListener = new RadioGroup.OnCheckedChangeListener() {
-
-        @Override
-        public void onCheckedChanged(RadioGroup group, int checkedId) {
-            snowView.hide();
-            rainView.hide();
-            int id = group.getCheckedRadioButtonId();
-            switch (id) {
-                case R.id.radio_original:
-                    mEffect = EffectUtil.EFFECT.ORIGINAL;
-                    break;
-                case R.id.radio_sketch:
-                    mEffect = EffectUtil.EFFECT.SKETCH;
-                    break;
-                case R.id.radio_gray:
-                    mEffect = EffectUtil.EFFECT.GRAY;
-                    break;
-                case R.id.radio_reverse:
-                    mEffect = EffectUtil.EFFECT.REVERSE;
-                    break;
-                case R.id.radio_pasttime:
-                    mEffect = EffectUtil.EFFECT.PASTTIME;
-                    break;
-                case R.id.radio_snow:
-                    snowView.show();
-                    break;
-                case R.id.radio_rain:
-                    rainView.show();
-                    break;
-                default:
-                    break;
-            }
-        }
-    };
-
-    private void back() {
-        mControlTake.setVisibility(View.VISIBLE);
-        mControlEffect.setVisibility(View.INVISIBLE);
-        takePhotoBtn.setEnabled(true);
-        reverseCameraBtn.setEnabled(true);
-        mProgress.hide();
-
-        cameraControl.start();
-        mPhotoView.setImageBitmap(null);
-        mPhotoView.setVisibility(View.INVISIBLE);
-        photoShow = false;
-    }
-
     @Override
     public void onBackPressed() {
-        if (photoShow) {
+        if (isState(STATE_TAKING)) {
             back();
-            return;
+        } else if (isState(STATE_TAKED)) {
+            hidePhoto();
+        } else {
+            super.onBackPressed();
         }
-        super.onBackPressed();
+    }
+
+    private void setState(int state) {
+        mState = state;
+    }
+
+    private boolean isState(int state) {
+        return mState == state;
     }
 
     @Override
@@ -257,38 +169,193 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
         Observable.create(new ObservableOnSubscribe<Bitmap>() {
             @Override
             public void subscribe(ObservableEmitter<Bitmap> emitter) throws Exception {
-                long start = System.currentTimeMillis();
-                Log.d(TAG, "subscribe: start=" + start);
 
-                Bitmap bitmap = EffectUtil.createBitmap(mEffect, data);
+                if (isState(STATE_TAKING)) {
+                    long start = System.currentTimeMillis();
+                    Log.d(TAG, "subscribe: start=" + start);
 
-                long end = System.currentTimeMillis();
-                Log.d(TAG, "subscribe: end=" + end + ", used=" + (end - start));
+                    Bitmap bitmap = mEffectFactory.createBitmap(mEffect, data);
 
-                emitter.onNext(bitmap);
+                    long end = System.currentTimeMillis();
+                    Log.d(TAG, "subscribe: end=" + end + ", used=" + (end - start));
+
+                    if (bitmap != null) {
+                        emitter.onNext(bitmap);
+                    } else {
+                        Log.d(TAG, "subscribe: bitmap is null");
+                    }
+                } else {
+                    Log.d(TAG, "subscribe: interrupt, mState =" + mState);
+                }
+
             }
         }).observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())
                 .subscribe(new Consumer<Bitmap>() {
                     @Override
                     public void accept(Bitmap bitmap) throws Exception {
+
                         Log.d(TAG, "accept: bitmap " + bitmap.getWidth() + "x" + bitmap.getHeight());
-                        mControlTake.setVisibility(View.INVISIBLE);
-                        mControlEffect.setVisibility(View.VISIBLE);
-                        mPhotoView.setImageBitmap(bitmap);
-                        mPhotoView.setVisibility(View.VISIBLE);
-                        photoShow = true;
-                        mProgress.hide();
+
+                        if (isState(STATE_TAKING)) {
+                            showPhoto(bitmap);
+                        } else {
+                            Log.d(TAG, "subscribe: accept, mState =" + mState);
+                        }
+
                     }
                 });
 
     }
 
-    @Override
-    public void clipEffectView(int left, int top, int right, int bottom) {
-
-        snowView.clip(left, top, right, bottom);
-        rainView.clip(left, top, right, bottom);
+    public void onShutterClick(View view) {
+        //mShutterButton.getBackground().setColorFilter(0x77FFFF00, PorterDuff.Mode.SRC_ATOP);
+        mShutterButton.setEnabled(false);
+        reverseCameraBtn.setEnabled(false);
+        mProgress.show();
+        setState(STATE_TAKING);
+        cameraControl.capture();
     }
 
+    public void onReverseClick(View view) {
+        RotateAnimation rotateAnimation = new RotateAnimation();
+        ValueAnimator valueAnimator = rotateAnimation.getAnimators(reverseCameraBtn);
+        valueAnimator.setDuration(1000);
+        valueAnimator.start();
+        cameraControl.reverseCamera();
+    }
+
+    public void onCancelClick(View view) {
+        back();
+    }
+
+    public void onConfirmClick(View view) {
+    }
+
+    private void showPhoto(final Bitmap bitmap) {
+        ScaleAnimation scaleAnimation = new ScaleAnimation();
+        AnimatorSet animatorSet = scaleAnimation.getOutAnimators(mPhotoView);
+        animatorSet.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+                mProgress.hide();
+                mControlShutter.setVisibility(View.INVISIBLE);
+                mControlEffect.setVisibility(View.VISIBLE);
+                mPhotoView.setVisibility(View.VISIBLE);
+                mPhotoView.setImageBitmap(bitmap);
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                mPhotoView.setBackgroundColor(Color.BLACK);
+                setState(STATE_TAKED);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animator) {
+
+            }
+        });
+        animatorSet.start();
+    }
+
+    private void hidePhoto() {
+        ScaleAnimation scaleAnimation = new ScaleAnimation();
+        AnimatorSet animatorSet = scaleAnimation.getInAnimators(mPhotoView);
+        animatorSet.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                mProgress.hide();
+                mControlShutter.setVisibility(View.VISIBLE);
+                mControlEffect.setVisibility(View.INVISIBLE);
+                //mShutterButton.getBackground().clearColorFilter();
+                mPhotoView.setBackgroundColor(Color.TRANSPARENT);
+                cameraControl.start();
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                mPhotoView.setVisibility(View.INVISIBLE);
+                mPhotoView.setImageBitmap(null);
+                mShutterButton.setEnabled(true);
+                reverseCameraBtn.setEnabled(true);
+                setState(STATE_IDLE);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+            }
+        });
+        animatorSet.start();
+    }
+
+    private void back() {
+        mEffectFactory.breakData();
+        mProgress.hide();
+        cameraControl.start();
+        mShutterButton.setEnabled(true);
+        reverseCameraBtn.setEnabled(true);
+        setState(STATE_IDLE);
+    }
+
+
+    private void initSlidingMenu() {
+        SlidingMenu menu = new SlidingMenu(this);
+        menu.setMode(SlidingMenu.LEFT);
+        menu.setTouchModeAbove(SlidingMenu.TOUCHMODE_FULLSCREEN);
+        menu.setShadowWidthRes(R.dimen.shadow_width);
+//        menu.setShadowDrawable(R.drawable.);
+        menu.setBehindOffsetRes(R.dimen.slidingmenu_offset);
+        menu.setFadeDegree(0.35f);
+        menu.attachToActivity(this, SlidingMenu.SLIDING_CONTENT);
+        menu.setMenu(R.layout.slidemenu_layout);
+
+        RadioGroup radioGroup = findViewById(R.id.radioGroup);
+        radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                snowView.hide();
+                rainView.hide();
+                int id = group.getCheckedRadioButtonId();
+                switch (id) {
+                    case R.id.radio_original:
+                        mEffect = Effect.ORIGINAL;
+                        break;
+                    case R.id.radio_sketch:
+                        mEffect = Effect.SKETCH;
+                        break;
+                    case R.id.radio_gray:
+                        mEffect = Effect.GRAY;
+                        break;
+                    case R.id.radio_reverse:
+                        mEffect = Effect.REVERSE;
+                        break;
+                    case R.id.radio_pasttime:
+                        mEffect = Effect.PASTTIME;
+                        break;
+                    case R.id.radio_highsaturation:
+                        mEffect = Effect.HIGHSATURATION;
+                        break;
+                    case R.id.radio_snow:
+                        snowView.show();
+                        break;
+                    case R.id.radio_rain:
+                        rainView.show();
+                        break;
+                    default:
+                        break;
+                }
+            }
+        });
+
+    }
 }

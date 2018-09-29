@@ -2,14 +2,15 @@
 
     <string name="app_name">BeautyCam</string>
 
-    <string name="effect_sketch">����</string>
-    <string name="effect_original">ԭͼ</string>
-    <string name="effect_gray">�Ұ�</string>
-    <string name="effect_reverse">��ת</string>
-    <string name="effect_pasttime">����</string>
+    <string name="effect_sketch">素描</string>
+    <string name="effect_original">原图</string>
+    <string name="effect_gray">灰白</string>
+    <string name="effect_reverse">反转</string>
+    <string name="effect_pasttime">怀旧</string>
+    <string name="effect_highsaturation">高饱和</string>
 
-    <string name="effect_snow">ѩ��</string>
-    <string name="effect_rain">���</string>
+    <string name="effect_snow">雪花</string>
+    <string name="effect_rain">雨滴</string>
 
 
 </resources>

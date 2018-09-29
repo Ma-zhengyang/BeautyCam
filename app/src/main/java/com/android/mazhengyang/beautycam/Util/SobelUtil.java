@@ -18,6 +18,11 @@ public class SobelUtil {
      * -1  0  +1           -1  -2  -1         x-1,y+1  x,y+1  x+1,y+1
      */
 
+    private boolean mStop = false;
+    public void setStop(boolean stop){
+        mStop = stop;
+    }
+
     private static double GX(int x, int y, Bitmap bitmap) {
         return (-1) * getPixel(x - 1, y - 1, bitmap)
                 + 1 * getPixel(x + 1, y - 1, bitmap)
@@ -43,7 +48,7 @@ public class SobelUtil {
         return bitmap.getPixel(x, y);
     }
 
-    public static Bitmap createSobel(Bitmap temp) {
+    public Bitmap createSobel(Bitmap temp) {
 
         int w = temp.getWidth();
         int h = temp.getHeight();
@@ -58,6 +63,9 @@ public class SobelUtil {
         double max = Double.MIN_VALUE;
         for (int i = 0; i < w; i++) {
             for (int j = 0; j < h; j++) {
+                if(mStop){
+                   return null;
+                }
                 double gx = GX(i, j, temp);
                 double gy = GY(i, j, temp);
                 tmap[j * w + i] = Math.sqrt(gx * gx + gy * gy);
@@ -70,6 +78,9 @@ public class SobelUtil {
         double top = max * 0.06;
         for (int i = 0; i < w; i++) {
             for (int j = 0; j < h; j++) {
+                if(mStop){
+                    return null;
+                }
                 if (tmap[j * w + i] > top) {
                     cmap[j * w + i] = mmap[j * w + i];
                 } else {

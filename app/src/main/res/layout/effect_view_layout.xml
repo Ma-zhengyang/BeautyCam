@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.android.mazhengyang.beautycam.ui.snow.SnowView
+        android:id="@+id/snow_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <com.android.mazhengyang.beautycam.ui.rain.RainView
+        android:id="@+id/rain_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+</FrameLayout>
