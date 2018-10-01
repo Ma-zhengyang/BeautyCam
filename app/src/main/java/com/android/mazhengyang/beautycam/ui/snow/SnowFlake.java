@@ -3,9 +3,8 @@ package com.android.mazhengyang.beautycam.ui.snow;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Point;
-import android.graphics.Rect;
 
-import com.android.mazhengyang.beautycam.util.RandomUtil;
+import com.android.mazhengyang.beautycam.utils.RandomUtil;
 
 /**
  * Created by mazhengyang on 18-9-25.

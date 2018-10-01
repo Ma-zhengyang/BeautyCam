@@ -21,14 +21,14 @@ import android.widget.ImageView;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
-import com.android.mazhengyang.beautycam.animation.RotateAnimation;
-import com.android.mazhengyang.beautycam.animation.ScaleAnimation;
+import com.android.mazhengyang.beautycam.animations.RotateAnimation;
+import com.android.mazhengyang.beautycam.animations.ScaleAnimation;
 import com.android.mazhengyang.beautycam.ui.CameraControl;
 import com.android.mazhengyang.beautycam.ui.ICameraControl;
 import com.android.mazhengyang.beautycam.ui.rain.RainView;
 import com.android.mazhengyang.beautycam.ui.snow.SnowView;
-import com.android.mazhengyang.beautycam.util.Effect;
-import com.android.mazhengyang.beautycam.util.EffectFactory;
+import com.android.mazhengyang.beautycam.utils.Effect;
+import com.android.mazhengyang.beautycam.utils.EffectFactory;
 import com.jeremyfeinstein.slidingmenu.lib.SlidingMenu;
 import com.wang.avi.AVLoadingIndicatorView;
 
@@ -226,7 +226,7 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
     }
 
     public void onCancelClick(View view) {
-        back();
+        hidePhoto();
     }
 
     public void onConfirmClick(View view) {

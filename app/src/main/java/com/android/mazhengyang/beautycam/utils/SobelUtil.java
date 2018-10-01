@@ -1,4 +1,4 @@
-package com.android.mazhengyang.beautycam.util;
+package com.android.mazhengyang.beautycam.utils;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;

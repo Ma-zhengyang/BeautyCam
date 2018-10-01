@@ -7,10 +7,8 @@ package com.android.mazhengyang.beautycam.ui.rain;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.util.Log;
-import android.view.View;
 
-import com.android.mazhengyang.beautycam.CameraActivity;
-import com.android.mazhengyang.beautycam.util.RandomUtil;
+import com.android.mazhengyang.beautycam.utils.RandomUtil;
 
 /**
  * 雨滴的类, 移动, 移出屏幕会重新设置位置.
