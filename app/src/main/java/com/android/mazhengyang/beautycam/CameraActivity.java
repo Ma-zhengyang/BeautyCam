@@ -17,6 +17,8 @@ import android.util.Log;
 import android.view.TextureView;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.RadioGroup;
 import android.widget.Toast;
@@ -27,8 +29,7 @@ import com.android.mazhengyang.beautycam.ui.CameraControl;
 import com.android.mazhengyang.beautycam.ui.ICameraControl;
 import com.android.mazhengyang.beautycam.ui.rain.RainView;
 import com.android.mazhengyang.beautycam.ui.snow.SnowView;
-import com.android.mazhengyang.beautycam.utils.Effect;
-import com.android.mazhengyang.beautycam.utils.EffectFactory;
+import com.android.mazhengyang.beautycam.utils.ImageUtil;
 import com.jeremyfeinstein.slidingmenu.lib.SlidingMenu;
 import com.wang.avi.AVLoadingIndicatorView;
 
@@ -57,9 +58,10 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
     private static final int STATE_TAKED = 2;
     private int mState = STATE_IDLE;
 
-    private int mEffect = 0;
+    private int effect = ImageUtil.ORIGINAL;
+    private boolean waterMark = false;
     private ICameraControl cameraControl;
-    private EffectFactory mEffectFactory;
+    private ImageUtil mImageUtil;
 
     @BindView(R.id.control_shutter)
     View mControlShutter;
@@ -94,7 +96,7 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
         cameraControl = new CameraControl(this, textureView);
         cameraControl.setCallback(this);
 
-        mEffectFactory = new EffectFactory();
+        mImageUtil = new ImageUtil();
 
         initSlidingMenu();
     }
@@ -174,7 +176,7 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
                     long start = System.currentTimeMillis();
                     Log.d(TAG, "subscribe: start=" + start);
 
-                    Bitmap bitmap = mEffectFactory.createBitmap(mEffect, data);
+                    Bitmap bitmap = mImageUtil.createBitmap(effect, waterMark, data);
 
                     long end = System.currentTimeMillis();
                     Log.d(TAG, "subscribe: end=" + end + ", used=" + (end - start));
@@ -299,7 +301,7 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
     }
 
     private void back() {
-        mEffectFactory.breakData();
+        mImageUtil.setStop(true);
         mProgress.hide();
         cameraControl.start();
         mShutterButton.setEnabled(true);
@@ -328,22 +330,22 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
                 int id = group.getCheckedRadioButtonId();
                 switch (id) {
                     case R.id.radio_original:
-                        mEffect = Effect.ORIGINAL;
+                        effect = ImageUtil.ORIGINAL;
                         break;
                     case R.id.radio_sketch:
-                        mEffect = Effect.SKETCH;
+                        effect = ImageUtil.SKETCH;
                         break;
                     case R.id.radio_gray:
-                        mEffect = Effect.GRAY;
+                        effect = ImageUtil.GRAY;
                         break;
                     case R.id.radio_reverse:
-                        mEffect = Effect.REVERSE;
+                        effect = ImageUtil.REVERSE;
                         break;
                     case R.id.radio_pasttime:
-                        mEffect = Effect.PASTTIME;
+                        effect = ImageUtil.PASTTIME;
                         break;
                     case R.id.radio_highsaturation:
-                        mEffect = Effect.HIGHSATURATION;
+                        effect = ImageUtil.HIGHSATURATION;
                         break;
                     case R.id.radio_snow:
                         snowView.show();
@@ -354,6 +356,14 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
                     default:
                         break;
                 }
+            }
+        });
+
+        CheckBox mWaterMark = findViewById(R.id.water_mark);
+        mWaterMark.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                waterMark = isChecked;
             }
         });
 

@@ -12,5 +12,6 @@
     <string name="effect_snow">雪花</string>
     <string name="effect_rain">雨滴</string>
 
+    <string name="water_mark">水印</string>
 
 </resources>
