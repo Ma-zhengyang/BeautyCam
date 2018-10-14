@@ -3,7 +3,6 @@ package com.android.mazhengyang.beautycam;
 import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorSet;
-import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -23,15 +22,18 @@ import android.widget.ImageView;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
-import com.android.mazhengyang.beautycam.animations.RotateAnimation;
-import com.android.mazhengyang.beautycam.animations.ScaleAnimation;
 import com.android.mazhengyang.beautycam.ui.CameraControl;
 import com.android.mazhengyang.beautycam.ui.ICameraControl;
 import com.android.mazhengyang.beautycam.ui.rain.RainView;
 import com.android.mazhengyang.beautycam.ui.snow.SnowView;
+import com.android.mazhengyang.beautycam.utils.AnimationUtil;
 import com.android.mazhengyang.beautycam.utils.ImageUtil;
+import com.android.mazhengyang.beautycam.utils.MediaSaver;
 import com.jeremyfeinstein.slidingmenu.lib.SlidingMenu;
 import com.wang.avi.AVLoadingIndicatorView;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -51,7 +53,7 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
     private static final String TAG = CameraActivity.class.getSimpleName();
 
     private static final int PERMISSIONS_REQUEST_CAMERA = 1024;
-    private static final int PERMISSIONS_EXTERNAL_STORAGE = 1025;
+    private static final int PERMISSIONS_REQUEST_EXTERNAL_STORAGE = 1025;
 
     private static final int STATE_IDLE = 0;
     private static final int STATE_TAKING = 1;
@@ -61,7 +63,10 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
     private int effect = ImageUtil.ORIGINAL;
     private boolean waterMark = false;
     private ICameraControl cameraControl;
+    private AnimationUtil mAnimationUtil;
     private ImageUtil mImageUtil;
+    private MediaSaver mMediaSaver;
+    private Bitmap mBitmap;
 
     @BindView(R.id.control_shutter)
     View mControlShutter;
@@ -96,7 +101,9 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
         cameraControl = new CameraControl(this, textureView);
         cameraControl.setCallback(this);
 
+        mAnimationUtil = new AnimationUtil();
         mImageUtil = new ImageUtil();
+        mMediaSaver = new MediaSaver();
 
         initSlidingMenu();
     }
@@ -111,6 +118,22 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
     protected void onResume() {
         super.onResume();
         cameraControl.start();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        cameraControl = null;
+        mAnimationUtil = null;
+        mImageUtil = null;
+
+        mMediaSaver.finish();
+        mMediaSaver = null;
+
+        if (mBitmap != null && !mBitmap.isRecycled()) {
+            mBitmap.recycle();
+            mBitmap = null;
+        }
     }
 
     @Override
@@ -155,12 +178,20 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     cameraControl.refreshPermission();
                 } else {
-                    Toast.makeText(getApplicationContext(), "camera_permission_required", Toast.LENGTH_LONG)
+                    Toast.makeText(getApplicationContext(), "CAMERA permission required", Toast.LENGTH_LONG)
                             .show();
+                    finish();
                 }
                 break;
             }
-            case PERMISSIONS_EXTERNAL_STORAGE:
+            case PERMISSIONS_REQUEST_EXTERNAL_STORAGE:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    storeImage(mBitmap, true);
+                } else {
+                    storeImage(mBitmap, false);
+                    Toast.makeText(getApplicationContext(), "WRITE_EXTERNAL_STORAGE permission required", Toast.LENGTH_LONG)
+                            .show();
+                }
             default:
                 break;
         }
@@ -177,6 +208,7 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
                     Log.d(TAG, "subscribe: start=" + start);
 
                     Bitmap bitmap = mImageUtil.createBitmap(effect, waterMark, data);
+                    mBitmap = bitmap;
 
                     long end = System.currentTimeMillis();
                     Log.d(TAG, "subscribe: end=" + end + ", used=" + (end - start));
@@ -220,10 +252,8 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
     }
 
     public void onReverseClick(View view) {
-        RotateAnimation rotateAnimation = new RotateAnimation();
-        ValueAnimator valueAnimator = rotateAnimation.getAnimators(reverseCameraBtn);
-        valueAnimator.setDuration(1000);
-        valueAnimator.start();
+        AnimatorSet animatorSet = mAnimationUtil.getRotateAnimators(reverseCameraBtn);
+        animatorSet.start();
         cameraControl.reverseCamera();
     }
 
@@ -232,11 +262,33 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
     }
 
     public void onConfirmClick(View view) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(CameraActivity.this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    PERMISSIONS_REQUEST_EXTERNAL_STORAGE);
+
+        } else {
+
+            storeImage(mBitmap, true);
+        }
+    }
+
+    private void storeImage(Bitmap bitmap, boolean granted) {
+        if (bitmap != null && granted) {
+            long time = System.currentTimeMillis();
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            Date d = new Date(time);
+            String t = format.format(d);
+            Log.d(TAG, "storeImage: t = " + t);
+            mMediaSaver.addImage(bitmap, t);
+        }
+        hidePhoto();
     }
 
     private void showPhoto(final Bitmap bitmap) {
-        ScaleAnimation scaleAnimation = new ScaleAnimation();
-        AnimatorSet animatorSet = scaleAnimation.getOutAnimators(mPhotoView);
+        AnimatorSet animatorSet = mAnimationUtil.getOutAnimators(mPhotoView);
         animatorSet.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animator) {
@@ -267,8 +319,7 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
     }
 
     private void hidePhoto() {
-        ScaleAnimation scaleAnimation = new ScaleAnimation();
-        AnimatorSet animatorSet = scaleAnimation.getInAnimators(mPhotoView);
+        AnimatorSet animatorSet = mAnimationUtil.getInAnimators(mPhotoView);
         animatorSet.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
@@ -360,7 +411,7 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
         });
 
         CheckBox mWaterMark = findViewById(R.id.water_mark);
-        mWaterMark.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
+        mWaterMark.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 waterMark = isChecked;

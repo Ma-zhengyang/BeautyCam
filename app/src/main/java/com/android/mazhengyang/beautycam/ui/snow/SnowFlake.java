@@ -16,7 +16,7 @@ import com.android.mazhengyang.beautycam.utils.RandomUtil;
 public class SnowFlake {
     // 雪花的角度
     private static final float ANGE_RANGE = 0.1f; // 角度范围
-    private static final float HALF_ANGLE_RANGE = ANGE_RANGE / 2f; // 一般的角度
+    private static final float HALF_ANGLE_RANGE = ANGE_RANGE / 2f; // 一半的角度
     private static final float HALF_PI = (float) Math.PI / 2f; // 半PI
     private static final float ANGLE_SEED = 25f; // 角度随机种子
     private static final float ANGLE_DIVISOR = 10000f;

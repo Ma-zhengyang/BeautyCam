@@ -12,6 +12,8 @@ import android.graphics.Paint;
 import android.media.ExifInterface;
 import android.util.Log;
 
+import com.android.mazhengyang.beautycam.CameraApplicaton;
+
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -383,12 +385,11 @@ public class ImageUtil {
         Paint textPaint = new Paint();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
         String time = sdf.format(new Date(System.currentTimeMillis()));
-        Log.d(TAG, "addWaterMark: time=" + time);
         textPaint.setColor(Color.GRAY);
-        textPaint.setTextSize(90);
-        float w = textPaint.measureText(time, 0, time.length());
-        Log.d(TAG, "addWaterMark: w=" + w);
-        mCanvas.drawText(time, width - w - 10, height - 10, textPaint);
+        textPaint.setTextSize(CameraApplicaton.dip2px(20.0f));
+        float textWidth = textPaint.measureText(time, 0, time.length());
+        Log.d(TAG, "addWaterMark: time=" + time + ", textWidth=" + textWidth);
+        mCanvas.drawText(time, width - textWidth - 10, height - 10, textPaint);
 
         mCanvas.save(Canvas.ALL_SAVE_FLAG);
         mCanvas.restore();
