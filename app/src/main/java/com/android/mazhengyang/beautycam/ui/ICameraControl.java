@@ -10,7 +10,7 @@ public interface ICameraControl {
      * 照相回调。
      */
     interface CameraControlCallback {
-        boolean onRequestPermission();
+        boolean onRequestCameraPermission();
 
         void onPictureTaken(byte[] data);
     }

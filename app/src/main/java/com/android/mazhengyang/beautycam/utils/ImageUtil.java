@@ -5,11 +5,10 @@ import android.graphics.BitmapFactory;
 import android.graphics.BitmapRegionDecoder;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.ColorMatrix;
-import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.media.ExifInterface;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.android.mazhengyang.beautycam.CameraApplicaton;
@@ -23,16 +22,30 @@ import java.util.Date;
  */
 
 public class ImageUtil {
-    private static final String TAG = "ImageUtil";
+    private static final String TAG = ImageUtil.class.getSimpleName();
 
-    public static final int ORIGINAL = 0;
-    public static final int SKETCH = 1;
-    public static final int GRAY = 2;
-    public static final int REVERSE = 3;
-    public static final int PASTTIME = 4;
-    public static final int HIGHSATURATION = 5;
 
     public ImageUtil() {
+    }
+
+    public static int getRotate(final String filename) {
+
+        try {
+            final ExifInterface exif = new ExifInterface(filename);
+            switch (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED)) {
+                case ExifInterface.ORIENTATION_ROTATE_270:
+                    return 270;
+                case ExifInterface.ORIENTATION_ROTATE_180:
+                    return 180;
+                case ExifInterface.ORIENTATION_ROTATE_90:
+                    return 90;
+                case ExifInterface.ORIENTATION_NORMAL:
+                default:
+                    return 0;
+            }
+        } catch (IOException e) {
+            return 0;
+        }
     }
 
     // Returns the degrees in clockwise. Values are 0, 90, 180, or 270.
@@ -171,114 +184,24 @@ public class ImageUtil {
         return inSampleSize;
     }
 
-    /**
-     *          ÑÕÉ«¾ØÕó              ÑÕÉ«·ÖÁ¿¾ØÕó
-     *       | a b c d e |           |R|
-     * A =   | f g h i j |      C=   |G|
-     *       | k l m n o |           |B|
-     *       | p q r s t |           |A|
-     *                               |1|
-     * <p>
-     * R1 = aR + bG + cB + dA + e
-     * G1 = fR + gG + hB + iA + j
-     * B1 = kR + lG + mB + nA + o
-     * A1 = pR + qG + rB + sA + t
-     * <p>
-     * µÚÒ»ÐÐµÄ abcde ÓÃÀ´¾ö¶¨ÐÂµÄÑÕÉ«ÖµÖÐµÄR¡ª¡ªºìÉ«
-     * µÚ¶þÐÐµÄ fghij ÓÃÀ´¾ö¶¨ÐÂµÄÑÕÉ«ÖµÖÐµÄG¡ª¡ªÂÌÉ«
-     * µÚÈýÐÐµÄ klmno ÓÃÀ´¾ö¶¨ÐÂµÄÑÕÉ«ÖµÖÐµÄB¡ª¡ªÀ¶É«
-     * µÚËÄÐÐµÄ pqrst ÓÃÀ´¾ö¶¨ÐÂµÄÑÕÉ«ÖµÖÐµÄA¡ª¡ªÍ¸Ã÷¶È
-     * ¾ØÕóAÖÐµÚÎåÁÐ¡ª¡ªejotÖµ·Ö±ðÓÃÀ´¾ö¶¨Ã¿¸ö·ÖÁ¿ÖÐµÄ offset £¬¼´Æ«ÒÆÁ¿
-     */
 
-
-    //³õÊ¼ÑÕÉ«¾ØÕó
-    public static float[] normalMatrix = new float[]{
-            1, 0, 0, 0, 0,
-            0, 1, 0, 0, 0,
-            0, 0, 1, 0, 0,
-            0, 0, 0, 0, 0,
-    };
-
-    //Ò»Ð©³£ÓÃµÄÍ¼Ïñ´¦ÀíÐ§¹ûµÄÑÕÉ«¾ØÕó
-
-    //»Ò¶ÈÐ§¹û
-    public static float[] grayMatrix = new float[]{
-            0.33f, 0.59f, 0.11f, 0.0f, 0.0f,
-            0.33f, 0.59f, 0.11f, 0.0f, 0.0f,
-            0.33f, 0.59f, 0.11f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-    };
-
-    //Í¼Ïñ·´×ª
-    public static float[] reverseMatrix = new float[]{
-            -1, 0, 0, 1, 1,
-            0, -1, 0, 1, 1,
-            0, 0, -1, 1, 1,
-            0, 0, 0, 1, 0,
-    };
-
-    //»³¾ÉÐ§¹û
-    public static float[] pasttimeMatrix = new float[]{
-            0.393f, 0.769f, 0189f, 0.0f, 0.0f,
-            0.349f, 0.686f, 0.168f, 0.0f, 0.0f,
-            0.272f, 0.534f, 0.131f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-    };
-
-    //¸ß±¥ºÍ¶È
-    public static float[] highSaturationMatrix = new float[]{
-            1.438F, -0.122F, -0.016F, 0, -0.03F,
-            -0.062F, 1.378F, -0.016F, 0, 0.05F,
-            -0.062F, -0.122F, 1.483F, 0, -0.02F,
-            0, 0, 0, 1, 0,
-    };
-
-    public Bitmap createBitmap(int effect, boolean waterMark, byte[] data) {
+    public static Bitmap createBitmap(int effect, boolean waterMark, byte[] data) {
 
         Log.d(TAG, "createBitmap: effect=" + effect);
 
         Bitmap bitmap = createOriginal(data, waterMark);
 
-        switch (effect) {
-            case SKETCH:
-                setStop(false);
-                bitmap = compress(bitmap, 480, 800);
-                Bitmap temp = createEffect(bitmap, grayMatrix);
-                Bitmap newBitmap = createSobel(temp);
-                if (!bitmap.isRecycled()) {
-                    Log.d(TAG, "sobel: recycle bitmap");
-                    bitmap.recycle();
-                }
-                return newBitmap;
-            case GRAY:
-                bitmap = createEffect(bitmap, grayMatrix);
-                break;
-            case REVERSE:
-                bitmap = createEffect(bitmap, reverseMatrix);
-                break;
-            case PASTTIME:
-                bitmap = createEffect(bitmap, pasttimeMatrix);
-                break;
-            case HIGHSATURATION:
-                bitmap = createEffect(bitmap, highSaturationMatrix);
-                break;
-            case ORIGINAL:
-            default:
-                break;
-        }
-
-        return bitmap;
+        return colorMatrix.create(effect, bitmap);
     }
 
 
-    private Bitmap createOriginal(final byte[] data, boolean waterMark) {
+    private static Bitmap createOriginal(final byte[] data, boolean waterMark) {
 
         final int rotation = getOrientation(data);
 
         Log.d(TAG, "createBitmap: rotation=" + rotation);
 
-        // BitmapRegionDecoder²»»á½«Õû¸öÍ¼Æ¬¼ÓÔØµ½ÄÚ´æ¡£
+        // BitmapRegionDecoderä¸ä¼šå°†æ•´ä¸ªå›¾ç‰‡åŠ è½½åˆ°å†…å­˜ã€‚
         BitmapRegionDecoder decoder = null;
         try {
             decoder = BitmapRegionDecoder.newInstance(data, 0, data.length, true);
@@ -288,7 +211,7 @@ public class ImageUtil {
 
         BitmapFactory.Options options = new BitmapFactory.Options();
 
-        // ×î´óÍ¼Æ¬´óÐ¡¡£
+        // æœ€å¤§å›¾ç‰‡å¤§å°ã€‚
         int maxPreviewImageSize = 2560;
         int size = Math.min(decoder.getWidth(), decoder.getHeight());
         size = Math.min(size, maxPreviewImageSize);
@@ -301,13 +224,13 @@ public class ImageUtil {
         Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, options);
 
         if (rotation != 0) {
-            // Ö»ÄÜÊÇ²Ã¼ôÍêÖ®ºóÔÙÐý×ªÁË¡£ÓÐÃ»ÓÐ±ðµÄ¸üºÃµÄ·½°¸ÄØ£¿
+            // åªèƒ½æ˜¯è£å‰ªå®Œä¹‹åŽå†æ—‹è½¬äº†ã€‚æœ‰æ²¡æœ‰åˆ«çš„æ›´å¥½çš„æ–¹æ¡ˆå‘¢ï¼Ÿ
             Matrix matrix = new Matrix();
             matrix.postRotate(rotation);
             Bitmap rotatedBitmap = Bitmap.createBitmap(
                     bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
             if (bitmap != rotatedBitmap) {
-                // ÓÐÊ±ºò createBitmap»á¸´ÓÃ¶ÔÏó
+                // æœ‰æ—¶å€™ createBitmapä¼šå¤ç”¨å¯¹è±¡
                 bitmap.recycle();
             }
             bitmap = rotatedBitmap;
@@ -320,56 +243,12 @@ public class ImageUtil {
         return bitmap;
     }
 
-    /**
-     * @param bitmap
-     * @param matrix
-     * @return
-     */
-    public Bitmap createEffect(Bitmap bitmap, float[] matrix) {
-
-        Bitmap bmp = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
-        ColorMatrix colorMatrix = new ColorMatrix();
-        colorMatrix.set(matrix);
-        Canvas canvas = new Canvas(bmp);
-        Paint paint = new Paint();
-        paint.setColorFilter(new ColorMatrixColorFilter(colorMatrix));
-        canvas.drawBitmap(bitmap, 0, 0, paint);
-        return bmp;
-    }
-
-
-    /**
-     * BitmapÑ¹Ëõ
-     *
-     * @param
-     * @param
-     * @param
-     * @return
-     */
-    private Bitmap compress(final Bitmap bitmap, int reqWidth, int reqHeight) {
-        int width = bitmap.getWidth();
-        int height = bitmap.getHeight();
-
-        if (height > reqHeight || width > reqWidth) {
-            float scaleWidth = (float) reqWidth / width;
-            float scaleHeight = (float) reqHeight / height;
-            float scale = scaleWidth < scaleHeight ? scaleWidth : scaleHeight;
-
-            Matrix matrix = new Matrix();
-            matrix.postScale(scale, scale);
-            Bitmap result = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(),
-                    bitmap.getHeight(), matrix, true);
-            bitmap.recycle();
-            return result;
-        }
-        return bitmap;
-    }
 
     /**
      * @param src
      * @return
      */
-    private Bitmap drawWaterMark(Bitmap src) {
+    private static Bitmap drawWaterMark(Bitmap src) {
 
         int width = src.getWidth();
         int height = src.getHeight();
@@ -394,7 +273,6 @@ public class ImageUtil {
         mCanvas.save(Canvas.ALL_SAVE_FLAG);
         mCanvas.restore();
 
-
         if (!src.isRecycled()) {
             Log.d(TAG, "addWaterMark: recycle bitmap");
             src.recycle();
@@ -404,87 +282,86 @@ public class ImageUtil {
 
     }
 
-    //===================sobel==========================
-    /**
-     * Gx                  Gy                   P
-     * -1  0  +1           +1  +2  +1         x-1,y-1  x,y-1  x+1,y-1
-     * -2  0  +2           0   0   0          x-1,y    x,y    x+1,y
-     * -1  0  +1           -1  -2  -1         x-1,y+1  x,y+1  x+1,y+1
-     */
 
-    private boolean mStop = false;
-
-    public void setStop(boolean stop) {
-        mStop = stop;
+    private static long freeMemory() {
+        return Runtime.getRuntime().maxMemory() - (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
     }
 
-    private static double GX(int x, int y, Bitmap bitmap) {
-        return (-1) * getPixel(x - 1, y - 1, bitmap)
-                + 1 * getPixel(x + 1, y - 1, bitmap)
-                + (-2) * getPixel(x - 1, y, bitmap)
-                + 2 * getPixel(x + 1, y, bitmap)
-                + (-1) * getPixel(x - 1, y + 1, bitmap)
-                + 1 * getPixel(x + 1, y + 1, bitmap);
-    }
+    private static void limitMemoryUsage(@NonNull BitmapFactory.Options options) {
 
-    private static double GY(int x, int y, Bitmap bitmap) {
-        return 1 * getPixel(x - 1, y - 1, bitmap)
-                + 2 * getPixel(x, y - 1, bitmap)
-                + 1 * getPixel(x + 1, y - 1, bitmap)
-                + (-1) * getPixel(x - 1, y + 1, bitmap)
-                + (-2) * getPixel(x, y + 1, bitmap)
-                + (-1) * getPixel(x + 1, y + 1, bitmap);
-    }
+        float bufferScale = 2f;
 
-    private static double getPixel(int x, int y, Bitmap bitmap) {
-        if (x < 0 || x >= bitmap.getWidth() || y < 0 || y >= bitmap.getHeight()) {
-            return 0;
+        if (options.inSampleSize < 1) {
+            options.inSampleSize = 1;
         }
-        return bitmap.getPixel(x, y);
+
+        if (freeMemory() < ((options.outWidth * options.outHeight * 4) / (options.inSampleSize * options.inSampleSize)) * 1.5f) {
+            System.gc();
+            System.gc();
+        }
+
+        while (freeMemory() < ((options.outWidth * options.outHeight * 4) / (options.inSampleSize * options.inSampleSize)) * bufferScale) {
+            options.inSampleSize += 1;
+        }
     }
 
-    public Bitmap createSobel(Bitmap temp) {
+    private static Bitmap decodeFile(final String pathName, final int startInSampleSize) {
+        final BitmapFactory.Options opts = new BitmapFactory.Options();
 
-        int w = temp.getWidth();
-        int h = temp.getHeight();
+        opts.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(pathName, opts);
+        limitMemoryUsage(opts);
+        opts.inJustDecodeBounds = false;
 
-        int[] mmap = new int[w * h];
-        double[] tmap = new double[w * h];
-        int[] cmap = new int[w * h];
+        int inSampleSize = startInSampleSize;
+        opts.inSampleSize = inSampleSize;
+        opts.inDither = false;
+        opts.inMutable = true;
 
-        temp.getPixels(mmap, 0, temp.getWidth(), 0, 0, temp.getWidth(),
-                temp.getHeight());
+        return BitmapFactory.decodeFile(pathName, opts);
+    }
 
-        double max = Double.MIN_VALUE;
-        for (int i = 0; i < w; i++) {
-            for (int j = 0; j < h; j++) {
-                if (mStop) {
-                    return null;
-                }
-                double gx = GX(i, j, temp);
-                double gy = GY(i, j, temp);
-                tmap[j * w + i] = Math.sqrt(gx * gx + gy * gy);
-                if (max < tmap[j * w + i]) {
-                    max = tmap[j * w + i];
-                }
+    public static Bitmap decodeFile(final String filename, final int minSize, final boolean square) {
+        return decodeFile(filename, minSize, square, true);
+    }
+
+    public static Bitmap decodeFile(final String filename, final int minSize, final boolean square, boolean fixRotation) {
+        final int rotate = getRotate(filename);
+
+        final BitmapFactory.Options opts = new BitmapFactory.Options();
+        opts.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(filename, opts);
+
+        final int size = Math.max(opts.outWidth, opts.outHeight);
+        if (size > minSize && minSize > 0) {
+            opts.inSampleSize = size / minSize;
+        } else {
+            opts.inSampleSize = 1;
+        }
+
+        Bitmap bitmap = decodeFile(filename, opts.inSampleSize);
+
+        if (bitmap == null) return null;
+
+        if (rotate != 0 && fixRotation) {
+            final Matrix matrix = new Matrix();
+            matrix.postRotate(rotate);
+            bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
+        }
+
+        if (square && bitmap.getWidth() != bitmap.getHeight()) {
+            if (bitmap.getWidth() > bitmap.getHeight()) {
+                bitmap = Bitmap.createBitmap(bitmap, (bitmap.getWidth() - bitmap.getHeight()) / 2,
+                        0,
+                        bitmap.getHeight(),
+                        bitmap.getHeight());
+            } else if (bitmap.getWidth() < bitmap.getHeight()) {
+                bitmap = Bitmap.createBitmap(bitmap, 0,
+                        (bitmap.getHeight() - bitmap.getWidth()) / 2,
+                        bitmap.getWidth(),
+                        bitmap.getWidth());
             }
         }
-
-        double top = max * 0.06;
-        for (int i = 0; i < w; i++) {
-            for (int j = 0; j < h; j++) {
-                if (mStop) {
-                    return null;
-                }
-                if (tmap[j * w + i] > top) {
-                    cmap[j * w + i] = mmap[j * w + i];
-                } else {
-                    cmap[j * w + i] = Color.WHITE;
-                }
-            }
-        }
-
-        return Bitmap.createBitmap(cmap, temp.getWidth(), temp.getHeight(),
-                Bitmap.Config.ARGB_8888);
+        return bitmap;
     }
 }

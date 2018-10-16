@@ -1,23 +1,28 @@
 package com.android.mazhengyang.beautycam.utils;
 
-import java.io.File;
-import java.io.FileOutputStream;
-
 import android.graphics.Bitmap;
 import android.os.Environment;
 import android.util.Log;
+
+import java.io.File;
+import java.io.FileOutputStream;
 
 public class Storage {
 
     private static final String TAG = Storage.class.getSimpleName();
 
-    public static void writeFile(String path, Bitmap bitmap) {
+    public static synchronized void writeFile(String path, Bitmap bitmap) {
         try {
-            File file = new File(path);
-            FileOutputStream out = new FileOutputStream(file);
+            Log.d(TAG, "writeFile: path=" + path);
+            FileOutputStream out = new FileOutputStream(path);
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
             out.flush();
             out.close();
+
+            if (bitmap != null && !bitmap.isRecycled()) {
+                bitmap.recycle();
+            }
+
         } catch (Exception e) {
             Log.e(TAG, "Failed to write data", e);
         }
@@ -34,8 +39,6 @@ public class Storage {
 
     public static String generateFilepath(String title) {
 
-        String dir = null;
-
         try {
 
             String state = Environment.getExternalStorageState();
@@ -46,17 +49,23 @@ public class Storage {
             String sd = Environment.getExternalStorageDirectory()
                     .getAbsolutePath();
 
-            dir = sd + "/BeautyCam/";
+            String dir = sd + "/BeautyCam/";
             File f = new File(dir);
             if (!f.exists()) {
                 f.mkdir();
+            }
+
+            if (f.exists()) {
+                return dir + "/" + title + ".jpg";
+            } else {
+                Log.d(TAG, "generateFilepath: BeautyCam not exist");
             }
 
         } catch (Exception e) {
             Log.e(TAG, "Create RESULT.TXT Fail..." + e.getMessage());
         }
 
-        return dir + title + ".jpg";
+        return null;
     }
 
 }

@@ -16,10 +16,10 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <include layout="@layout/effect_view_layout"/>
+        <include layout="@layout/effect_view_layout" />
 
         <ImageView
-            android:id="@+id/taked_photo"
+            android:id="@+id/snapshot"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:padding="10dp"
@@ -34,7 +34,6 @@
             app:indicatorName="BallPulseIndicator" />
     </FrameLayout>
 
-
-    <include layout="@layout/control_btn_layout" />
+    <include layout="@layout/capture_control_layout" />
 
 </FrameLayout>

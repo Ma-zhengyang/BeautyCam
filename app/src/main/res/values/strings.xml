@@ -14,4 +14,7 @@
 
     <string name="water_mark">水印</string>
 
+    <string name="no_camera_permission">需要相机权限</string>
+    <string name="no_storage_permission">需要读取存储设备权限</string>
+
 </resources>

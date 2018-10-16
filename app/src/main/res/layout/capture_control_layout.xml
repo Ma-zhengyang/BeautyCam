@@ -12,19 +12,25 @@
         android:layout_height="wrap_content"
         android:layout_centerVertical="true">
 
-        <ImageView
+        <com.android.mazhengyang.beautycam.ui.GalleryButton
+            android:id="@+id/btn_gallery"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_alignParentLeft="true"
+            android:layout_centerInParent="true"
+            android:layout_marginLeft="20dp" />
+
+        <com.android.mazhengyang.beautycam.ui.ShutterButton
             android:id="@+id/btn_shutter"
             android:layout_width="56dp"
             android:layout_height="56dp"
             android:layout_centerInParent="true"
-            android:background="@drawable/bd_ocr_take_photo_selector"
-            android:clickable="true"
-            android:onClick="onShutterClick" />
+            android:clickable="true" />
 
         <ImageView
             android:id="@+id/btn_reverse"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:layout_alignParentRight="true"
             android:layout_centerInParent="true"
             android:layout_marginRight="20dp"
@@ -42,21 +48,21 @@
 
         <ImageView
             android:id="@+id/btn_cancel"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_alignParentLeft="true"
-            android:layout_marginLeft="30dp"
-            android:background="@drawable/bd_cancel"
+            android:layout_marginLeft="40dp"
+            android:background="@drawable/ic_take_close_selector"
             android:clickable="true"
             android:onClick="onCancelClick" />
 
         <ImageView
             android:id="@+id/btn_confirm"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_alignParentRight="true"
-            android:layout_marginRight="30dp"
-            android:background="@drawable/bd_confirm"
+            android:layout_marginRight="40dp"
+            android:background="@drawable/ic_take_check_selector"
             android:clickable="true"
             android:onClick="onConfirmClick" />
     </RelativeLayout>

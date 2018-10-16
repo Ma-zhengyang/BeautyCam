@@ -108,7 +108,7 @@ public class CameraControl implements ICameraControl {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
             if (checkPermission && callback != null) {
-                callback.onRequestPermission();
+                callback.onRequestCameraPermission();
             }
             return;
         }

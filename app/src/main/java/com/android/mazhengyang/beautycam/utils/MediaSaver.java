@@ -3,7 +3,9 @@ package com.android.mazhengyang.beautycam.utils;
 import android.graphics.Bitmap;
 import android.util.Log;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class MediaSaver extends Thread {
 
@@ -26,6 +28,7 @@ public class MediaSaver extends Thread {
 
     // Runs in main thread
     public void addImage(Bitmap bitmap, String title) {
+
         SaveRequest r = new SaveRequest();
         r.bitmap = bitmap;
         r.title = title;
