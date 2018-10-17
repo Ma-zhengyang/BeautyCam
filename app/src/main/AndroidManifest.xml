@@ -29,6 +29,12 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".BeautifyPhotoActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:screenOrientation="portrait"
+            android:theme="@android:style/Theme.Holo.NoActionBar.Fullscreen">
+        </activity>
+
     </application>
 
 </manifest>

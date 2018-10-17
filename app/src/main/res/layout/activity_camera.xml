@@ -1,39 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#FF000000"
+    android:orientation="vertical"
     tools:context="com.android.mazhengyang.beautycam.CameraActivity">
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginBottom="66dp">
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
         <TextureView
             android:id="@+id/camera_textureview"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <include layout="@layout/effect_view_layout" />
-
         <ImageView
-            android:id="@+id/snapshot"
+            android:id="@+id/snap_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:padding="10dp"
-            android:visibility="invisible" />
+            android:visibility="invisible"/>
 
-        <com.wang.avi.AVLoadingIndicatorView
-            android:id="@+id/progress"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:visibility="invisible"
-            app:indicatorName="BallPulseIndicator" />
     </FrameLayout>
 
-    <include layout="@layout/capture_control_layout" />
 
-</FrameLayout>
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_centerVertical="true">
+
+        <com.android.mazhengyang.beautycam.ui.GalleryButton
+            android:id="@+id/btn_gallery"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_alignParentLeft="true"
+            android:layout_centerInParent="true"
+            android:layout_marginLeft="20dp" />
+
+        <com.android.mazhengyang.beautycam.ui.ShutterButton
+            android:id="@+id/btn_shutter"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_centerInParent="true"
+            android:clickable="true" />
+
+        <ImageView
+            android:id="@+id/btn_reverse"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_alignParentRight="true"
+            android:layout_centerInParent="true"
+            android:layout_marginRight="20dp"
+            android:background="@drawable/ic_camera_front_bb_white_24dp"
+            android:clickable="true"
+            android:onClick="onReverseClick" />
+    </RelativeLayout>
+
+</LinearLayout>

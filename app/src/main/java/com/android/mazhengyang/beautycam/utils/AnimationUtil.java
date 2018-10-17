@@ -37,12 +37,12 @@ public class AnimationUtil {
 
         ObjectAnimator scaleX = ObjectAnimator.ofFloat(view, "scaleX", 1.0f, 0.1f);
         ObjectAnimator scaleY = ObjectAnimator.ofFloat(view, "scaleY", 1.0f, 0.1f);
-        scaleX.setDuration(1000);
-        scaleY.setDuration(1000);
+        scaleX.setDuration(800);
+        scaleY.setDuration(800);
         ObjectAnimator translationX = ObjectAnimator.ofFloat(view, "translationX", 0, -view.getRootView().getWidth() / 2 + location[0]);
         ObjectAnimator translationY = ObjectAnimator.ofFloat(view, "translationY", 0, view.getRootView().getHeight() / 2);
-        translationX.setDuration(1000);
-        translationY.setDuration(1000);
+        translationX.setDuration(800);
+        translationY.setDuration(800);
 
         final AnimatorSet animatorSet = new AnimatorSet();
         animatorSet.playTogether(scaleX, scaleY, translationX, translationY);

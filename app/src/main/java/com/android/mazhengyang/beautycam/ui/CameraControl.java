@@ -16,6 +16,8 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 
+import com.android.mazhengyang.beautycam.CameraActivity;
+
 import java.io.IOException;
 import java.util.List;
 

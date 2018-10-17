@@ -14,6 +14,7 @@ import android.util.Log;
 import com.android.mazhengyang.beautycam.CameraApplicaton;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -189,13 +190,17 @@ public class ImageUtil {
 
         Log.d(TAG, "createBitmap: effect=" + effect);
 
-        Bitmap bitmap = createOriginal(data, waterMark);
+        Bitmap bitmap = createOriginal(data);
+
+        if (waterMark) {
+            bitmap = drawWaterMark(bitmap);
+        }
 
         return colorMatrix.create(effect, bitmap);
     }
 
 
-    private static Bitmap createOriginal(final byte[] data, boolean waterMark) {
+    public static Bitmap createOriginal(final byte[] data) {
 
         final int rotation = getOrientation(data);
 
@@ -234,10 +239,6 @@ public class ImageUtil {
                 bitmap.recycle();
             }
             bitmap = rotatedBitmap;
-        }
-
-        if (waterMark) {
-            return drawWaterMark(bitmap);
         }
 
         return bitmap;
@@ -282,6 +283,34 @@ public class ImageUtil {
 
     }
 
+    //得到指定大小的Bitmap对象
+    public static Bitmap getResizedBitmap(byte[] data, int width, int height) {
+
+        final int rotation = getOrientation(data);
+
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        options.outWidth = width;
+        options.outHeight = height;
+        options.inJustDecodeBounds = false;
+        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, options);
+
+        if (rotation != 0) {
+            // 只能是裁剪完之后再旋转了。有没有别的更好的方案呢？
+            Matrix matrix = new Matrix();
+            matrix.postRotate(rotation);
+            Bitmap rotatedBitmap = Bitmap.createBitmap(
+                    bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
+            if (bitmap != rotatedBitmap) {
+                // 有时候 createBitmap会复用对象
+                bitmap.recycle();
+            }
+            bitmap = rotatedBitmap;
+        }
+
+        return bitmap;
+    }
+
 
     private static long freeMemory() {
         return Runtime.getRuntime().maxMemory() - (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
@@ -322,11 +351,8 @@ public class ImageUtil {
     }
 
     public static Bitmap decodeFile(final String filename, final int minSize, final boolean square) {
-        return decodeFile(filename, minSize, square, true);
-    }
 
-    public static Bitmap decodeFile(final String filename, final int minSize, final boolean square, boolean fixRotation) {
-        final int rotate = getRotate(filename);
+        final int rotation = getRotate(filename);
 
         final BitmapFactory.Options opts = new BitmapFactory.Options();
         opts.inJustDecodeBounds = true;
@@ -343,10 +369,15 @@ public class ImageUtil {
 
         if (bitmap == null) return null;
 
-        if (rotate != 0 && fixRotation) {
-            final Matrix matrix = new Matrix();
-            matrix.postRotate(rotate);
-            bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
+        if (rotation != 0) {
+            Matrix matrix = new Matrix();
+            matrix.postRotate(rotation);
+            Bitmap rotatedBitmap = Bitmap.createBitmap(
+                    bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
+            if (bitmap != rotatedBitmap) {
+                bitmap.recycle();
+            }
+            bitmap = rotatedBitmap;
         }
 
         if (square && bitmap.getWidth() != bitmap.getHeight()) {
@@ -364,4 +395,6 @@ public class ImageUtil {
         }
         return bitmap;
     }
+
+
 }

@@ -19,9 +19,7 @@ public class Storage {
             out.flush();
             out.close();
 
-            if (bitmap != null && !bitmap.isRecycled()) {
-                bitmap.recycle();
-            }
+            DataBuffer.cleanBitmap();
 
         } catch (Exception e) {
             Log.e(TAG, "Failed to write data", e);
@@ -57,7 +55,7 @@ public class Storage {
 
             if (f.exists()) {
                 return dir + "/" + title + ".jpg";
-            } else {
+            }else{
                 Log.d(TAG, "generateFilepath: BeautyCam not exist");
             }
 
