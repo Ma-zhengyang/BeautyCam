@@ -4,4 +4,20 @@
     <string name="no_camera_permission">需要相机权限</string>
     <string name="no_storage_permission">需要读取存储设备权限</string>
 
+    <string name="str_filger_normal">原始</string>
+    <string name="str_filter_aimei">暧昧</string>
+    <string name="str_filter_danlan">淡蓝</string>
+    <string name="str_filter_danhuang">蛋黄</string>
+    <string name="str_filter_fugu">复古</string>
+    <string name="str_filter_gaoleng">高冷</string>
+    <string name="str_filter_huaijiu">怀旧</string>
+    <string name="str_filter_jiaopian">胶片</string>
+    <string name="str_filter_keai">可爱</string>
+    <string name="str_filter_luomo">落寞</string>
+    <string name="str_filter_jiaqiang">加强</string>
+    <string name="str_filter_nuanxin">暖心</string>
+    <string name="str_filter_qingxin">清新</string>
+    <string name="str_filter_rixi">日系</string>
+    <string name="str_filter_wennuan">温暖</string>
+
 </resources>

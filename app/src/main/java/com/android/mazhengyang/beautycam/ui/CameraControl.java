@@ -78,14 +78,9 @@ public class CameraControl implements ICameraControl {
     }
 
     @Override
-    public void refreshPermission() {
-        startPreview(true);
-    }
-
-    @Override
     public void start() {
         Log.d(TAG, "start: ");
-        startPreview(false);
+        startPreview();
     }
 
     @Override
@@ -106,12 +101,9 @@ public class CameraControl implements ICameraControl {
     }
 
     // 开启预览
-    private void startPreview(boolean checkPermission) {
+    private void startPreview() {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
-            if (checkPermission && callback != null) {
-                callback.onRequestCameraPermission();
-            }
             return;
         }
 
@@ -160,7 +152,7 @@ public class CameraControl implements ICameraControl {
                 try {
                     camera = Camera.open(facing);
                 } catch (Throwable e) {
-                    startPreview(true);
+                    startPreview();
                     Log.e(TAG, "initCamera: " + e);
                     return;
                 }
@@ -184,7 +176,7 @@ public class CameraControl implements ICameraControl {
 
             resizeForPreviewAspectRatio(parameters);
 
-            startPreview(false);
+            startPreview();
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -485,7 +477,7 @@ public class CameraControl implements ICameraControl {
 
         } catch (RuntimeException e) {
             e.printStackTrace();
-            startPreview(false);
+            startPreview();
         }
     }
 

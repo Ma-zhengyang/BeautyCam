@@ -166,7 +166,7 @@ public class GPUImageFilterTools {
                 curveFilter.setFromCurveFileInputStream(context.getResources().openRawResource(
                         R.raw.keai));
                 return curveFilter;
-            case ACV_LOMO:
+            case ACV_LUOMO:
                 curveFilter.setFromCurveFileInputStream(context.getResources().openRawResource(
                         R.raw.lomo));
                 return curveFilter;
@@ -388,7 +388,7 @@ public class GPUImageFilterTools {
 
     public enum FilterType {
         NORMAL, ACV_AIMEI, ACV_DANLAN, ACV_DANHUANG, ACV_FUGU, ACV_GAOLENG, ACV_HUAIJIU, ACV_JIAOPIAN,
-        ACV_KEAI, ACV_LOMO, ACV_MORENJIAQIANG, ACV_NUANXIN, ACV_QINGXIN,ACV_RIXI, ACV_WENNUAN,
+        ACV_KEAI, ACV_LUOMO, ACV_MORENJIAQIANG, ACV_NUANXIN, ACV_QINGXIN,ACV_RIXI, ACV_WENNUAN,
 
         CONTRAST, GRAYSCALE, SHARPEN, SEPIA, SOBEL_EDGE_DETECTION, THREE_X_THREE_CONVOLUTION, FILTER_GROUP, EMBOSS, POSTERIZE, GAMMA, BRIGHTNESS, INVERT, HUE, PIXELATION,
         SATURATION, EXPOSURE, HIGHLIGHT_SHADOW, MONOCHROME, OPACITY, RGB, WHITE_BALANCE, VIGNETTE, TONE_CURVE, BLEND_COLOR_BURN, BLEND_COLOR_DODGE, BLEND_DARKEN, BLEND_DIFFERENCE,

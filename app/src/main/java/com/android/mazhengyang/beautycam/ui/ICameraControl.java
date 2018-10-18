@@ -10,17 +10,11 @@ public interface ICameraControl {
      * 照相回调。
      */
     interface CameraControlCallback {
-        boolean onRequestCameraPermission();
 
         void onPictureTaken(byte[] data);
     }
 
     void setCallback(CameraControlCallback callback);
-
-    /**
-     * 获取到拍照权限时，调用些函数以继续。
-     */
-    void refreshPermission();
 
     /**
      * 打开相机。

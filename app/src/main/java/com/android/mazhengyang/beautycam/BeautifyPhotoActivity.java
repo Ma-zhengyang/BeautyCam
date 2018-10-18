@@ -11,12 +11,11 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
-import com.android.mazhengyang.beautycam.effect.EffectService;
-import com.android.mazhengyang.beautycam.effect.FilterAdapter;
-import com.android.mazhengyang.beautycam.effect.FilterEffect;
-import com.android.mazhengyang.beautycam.ui.HorizontalListView;
+import com.android.mazhengyang.beautycam.adapter.FilterAdapter;
+import com.android.mazhengyang.beautycam.effect.EffectBean;
+import com.android.mazhengyang.beautycam.effect.EffectFactory;
+import com.android.mazhengyang.beautycam.ui.widget.HorizontalListView;
 import com.android.mazhengyang.beautycam.utils.DataBuffer;
-import com.android.mazhengyang.beautycam.utils.GPUImageFilterTools;
 import com.android.mazhengyang.beautycam.utils.LoadImageCallback;
 import com.android.mazhengyang.beautycam.utils.LoadImageTask;
 import com.wang.avi.AVLoadingIndicatorView;
@@ -55,7 +54,7 @@ public class BeautifyPhotoActivity extends Activity {
         Log.d(TAG, "onCreate: ");
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_photo_beautify);
+        setContentView(R.layout.activity_beautify_photo);
         ButterKnife.bind(this);
 
         byte[] data = DataBuffer.getByteArray();
@@ -95,14 +94,21 @@ public class BeautifyPhotoActivity extends Activity {
      * 初始化滤镜
      */
     private void initFilterToolBar() {
-        final List<FilterEffect> filters = EffectService.getInst().getLocalFilters(this);
+        final List<EffectBean> filters = EffectFactory.getInst().getLocalFilters(this);
         final FilterAdapter adapter = new FilterAdapter(this, filters, smallImageBackgroud);
         adapter.setOnItemClickListener(new FilterAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(View view, int position) {
                 Log.d(TAG, "onItemClick: position=" + position);
-                GPUImageFilter filter = GPUImageFilterTools.createFilterForType(
-                        BeautifyPhotoActivity.this, filters.get(position).getType());
+
+                for (EffectBean b : filters) {
+                    b.setChecked(false);
+                }
+
+                filters.get(position).setChecked(true);
+                adapter.notifyDataSetChanged();
+
+                GPUImageFilter filter = filters.get(position).getFilter();
                 mGPUImageView.setFilter(filter);
 
             }
@@ -111,7 +117,7 @@ public class BeautifyPhotoActivity extends Activity {
         mHorizontalListView.setItemViewCacheSize(15);
     }
 
-    public void onConfirmClick(View view) {
+    public void onCheckClick(View view) {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
 

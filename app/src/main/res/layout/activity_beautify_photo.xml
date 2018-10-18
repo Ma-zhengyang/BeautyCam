@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <jp.co.cyberagent.android.gpuimage.GPUImageView
+        android:id="@+id/gpu_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center" />
+
+    <include layout="@layout/effect_cancel_check_layout" />
+
+    <com.wang.avi.AVLoadingIndicatorView
+        android:id="@+id/indicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="invisible"
+        app:indicatorName="BallPulseIndicator" />
+
+    <com.android.mazhengyang.beautycam.ui.widget.HorizontalListView
+        android:id="@+id/list_tools"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        android:layout_gravity="bottom"
+        android:gravity="center_vertical"
+        android:overScrollMode="always" />
+
+</FrameLayout>
