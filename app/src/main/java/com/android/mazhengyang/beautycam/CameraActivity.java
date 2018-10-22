@@ -55,13 +55,17 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
     private MediaSaver mMediaSaver;
 
     @BindView(R.id.snap_view)
-    ImageView mSnapView;
+    ImageView snapView;
+    @BindView(R.id.focus_view)
+    View focusView;
     @BindView(R.id.btn_gallery)
-    GalleryButton mGalleryButton;
+    GalleryButton galleryBtn;
     @BindView(R.id.btn_shutter)
-    ImageView mShutterBtn;
+    ImageView shutterBtn;
     @BindView(R.id.btn_reverse)
-    ImageView reverseCameraBtn;
+    ImageView reverseBtn;
+    @BindView(R.id.btn_flash)
+    ImageView flashBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,15 +82,15 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
         Log.d(TAG, "onCreate: display size=" + size.x + "x" + size.y);
         Log.d(TAG, "onCreate: display density=" + density);
 
-        TextureView textureView = findViewById(R.id.camera_textureview);
+        final TextureView textureView = findViewById(R.id.camera_textureview);
         cameraControl = new CameraControl(this, textureView);
         cameraControl.setCallback(this);
 
         mAnimationUtil = new AnimationUtil();
         mMediaSaver = new MediaSaver();
 
-        mGalleryButton.loadLatest(this);
-        mShutterBtn.setOnClickListener(new View.OnClickListener() {
+        galleryBtn.loadLatest(this);
+        shutterBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 onShutterClick(v);
@@ -167,7 +171,7 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     cameraControl.start();
 
-                    mGalleryButton.loadLatest(this);
+                    galleryBtn.loadLatest(this);
                 } else {
                     Toast.makeText(getApplicationContext(), getApplicationContext().
                             getString(R.string.no_camera_permission), Toast.LENGTH_LONG)
@@ -178,7 +182,7 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
             }
             case PERMISSIONS_REQUEST_EXTERNAL_STORAGE: {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    mGalleryButton.loadLatest(this);
+                    galleryBtn.loadLatest(this);
                 } else {
                     Toast.makeText(getApplicationContext(), getApplicationContext().
                             getString(R.string.no_storage_permission), Toast.LENGTH_LONG)
@@ -204,8 +208,8 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
         if (isState(STATE_TAKING)) {
             Sobel.setStop(true);
             cameraControl.start();
-            mShutterBtn.setEnabled(true);
-            reverseCameraBtn.setEnabled(true);
+            shutterBtn.setEnabled(true);
+            reverseBtn.setEnabled(true);
             setState(STATE_IDLE);
         } else {
             super.onBackPressed();
@@ -218,6 +222,35 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
 //        bmp.compress(Bitmap.CompressFormat.PNG, 100, bs);
 //        return bs.toByteArray();
 //    }
+
+    @Override
+    public void onFocus(final boolean success) {
+        mAnimationUtil.playScale(focusView, new AnimationCallback() {
+            @Override
+            public void start() {
+                focusView.setBackground(getDrawable(R.drawable.camera_focus_start));
+            }
+
+            @Override
+            public void end() {
+                if (success) {
+                    focusView.setBackground(getDrawable(R.drawable.camera_focus_success));
+                } else {
+                    focusView.setBackground(getDrawable(R.drawable.camera_focus_fail));
+                }
+            }
+        });
+    }
+
+    @Override
+    public void turnLight(int drawable) {
+        if (drawable == -1) {
+            flashBtn.setVisibility(View.INVISIBLE);
+        } else {
+            flashBtn.setVisibility(View.VISIBLE);
+            flashBtn.setImageResource(drawable);
+        }
+    }
 
     @Override
     public void onPictureTaken(final byte[] data) {
@@ -249,21 +282,21 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
     private void playStorePhotoAnim(final Bitmap b) {
         Log.d(TAG, "playStorePhotoAnim: ");
 
-        mAnimationUtil.storeAnimators(mSnapView,
+        mAnimationUtil.playSaveImage(snapView,
                 new AnimationCallback() {
                     @Override
                     public void start() {
                         Log.d(TAG, "start: ");
-                        mSnapView.setImageBitmap(b);
-                        mSnapView.setVisibility(View.VISIBLE);
+                        snapView.setImageBitmap(b);
+                        snapView.setVisibility(View.VISIBLE);
                         cameraControl.start();
                     }
 
                     @Override
                     public void end() {
                         Log.d(TAG, "end: ");
-                        mSnapView.setVisibility(View.INVISIBLE);
-                        mSnapView.setImageBitmap(null);
+                        snapView.setVisibility(View.INVISIBLE);
+                        snapView.setImageBitmap(null);
                         setState(STATE_IDLE);
                         storeImage(b);
                     }
@@ -279,23 +312,27 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
 
     public void onReverseClick(View view) {
         if (isState(STATE_IDLE)) {
-            AnimatorSet animatorSet = mAnimationUtil.rotateAnimators(reverseCameraBtn);
+            AnimatorSet animatorSet = mAnimationUtil.rotateAnimators(reverseBtn);
             animatorSet.start();
-            cameraControl.reverseCamera();
+            cameraControl.reverse();
         }
     }
 
+    public void onFlashClick(View view) {
+        cameraControl.updateFlashMode();
+    }
+
     private void storeImage(Bitmap bitmap) {
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd_HHmmss");
         Date d = new Date(System.currentTimeMillis());
-        String title = "image_" + format.format(d);
+        String title = "IMG_" + format.format(d);
         Log.d(TAG, "storeImage: title = " + title);
         mMediaSaver.addImage(bitmap, title, new StoreCallback() {
             @Override
             public void success() {
                 Log.d(TAG, "storeImage success: ");
                 DataBuffer.cleanBitmap();
-                mGalleryButton.loadLatest(CameraActivity.this);
+                galleryBtn.loadLatest(CameraActivity.this);
             }
 
             @Override

@@ -78,14 +78,12 @@ public class GalleryButton extends android.support.v7.widget.AppCompatImageButto
         for (int i = 0; i < files.length; i++) {
             String title = files[i].getName();
 
-            if (title.startsWith("image_")) {
+            if (title.startsWith("IMG_")) {
 
                 Log.d(TAG, "subscribe: title=" + title);
 
                 String time = title.substring(title.indexOf("_") + 1, title.lastIndexOf("."));
                 time = time.replace("_", "");
-                time = time.replace("-", "");
-                time = time.replace(":", "");
 
                 Long t = Long.valueOf(time);
 

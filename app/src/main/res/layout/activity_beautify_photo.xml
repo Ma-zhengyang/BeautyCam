@@ -13,20 +13,20 @@
 
     <include layout="@layout/effect_cancel_check_layout" />
 
-    <com.wang.avi.AVLoadingIndicatorView
+    <com.example.mzy.indicators.LoadingIndicator
         android:id="@+id/indicator"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:visibility="invisible"
-        app:indicatorName="BallPulseIndicator" />
+        app:indicatorName="ParallelogramIndicator" />
 
     <com.android.mazhengyang.beautycam.ui.widget.HorizontalListView
         android:id="@+id/list_tools"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
         android:layout_gravity="bottom"
+        android:layout_marginBottom="20dp"
         android:gravity="center_vertical"
         android:overScrollMode="always" />
 

@@ -18,7 +18,7 @@ import com.android.mazhengyang.beautycam.ui.widget.HorizontalListView;
 import com.android.mazhengyang.beautycam.utils.DataBuffer;
 import com.android.mazhengyang.beautycam.utils.LoadImageCallback;
 import com.android.mazhengyang.beautycam.utils.LoadImageTask;
-import com.wang.avi.AVLoadingIndicatorView;
+import com.example.mzy.indicators.LoadingIndicator;
 
 import java.util.List;
 
@@ -42,7 +42,7 @@ public class BeautifyPhotoActivity extends Activity {
     @BindView(R.id.list_tools)
     HorizontalListView mHorizontalListView;
     @BindView(R.id.indicator)
-    AVLoadingIndicatorView mIndicator;
+    LoadingIndicator mIndicator;
 
     //当前预览的大图片
     private Bitmap currentBitmap;
@@ -62,14 +62,14 @@ public class BeautifyPhotoActivity extends Activity {
         if (data == null) {
             Log.e(TAG, "onCreate: data is null");
         } else {
-            mIndicator.show();
+            mIndicator.setVisibility(View.VISIBLE);
             new LoadImageTask().load(data, new LoadImageCallback() {
                 @Override
                 public void callback(Bitmap result) {
                     Log.d(TAG, "callback: currentBitmap=" + result);
                     currentBitmap = result;
                     mGPUImageView.setImage(currentBitmap);
-                    mIndicator.hide();
+                    mIndicator.setVisibility(View.INVISIBLE);
                 }
             });
 

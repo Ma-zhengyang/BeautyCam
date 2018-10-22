@@ -6,6 +6,10 @@ import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
+import android.view.animation.Animation;
+import android.view.animation.ScaleAnimation;
+
+import com.android.mazhengyang.beautycam.R;
 
 /**
  * Created by mazhengyang on 18-10-12.
@@ -30,7 +34,7 @@ public class AnimationUtil {
         return animatorSet;
     }
 
-    public void storeAnimators(View view, final AnimationCallback callback) {
+    public void playSaveImage(View view, final AnimationCallback callback) {
 
         //reset x y
         ObjectAnimator resetX = ObjectAnimator.ofFloat(view, "translationX", -view.getRootView().getWidth() / 2, 0);
@@ -109,6 +113,36 @@ public class AnimationUtil {
         animatorSet.setDuration(500);
 
         return animatorSet;
+    }
+
+    public Animation playScale(final View view, final AnimationCallback callback) {
+
+        ScaleAnimation scaleAnimation = new ScaleAnimation(1.0f, 0.3f, 1.0f, 0.3f,
+                ScaleAnimation.RELATIVE_TO_SELF, 0.5f, ScaleAnimation.RELATIVE_TO_SELF, 0.5f);
+        scaleAnimation.setDuration(800);
+        view.startAnimation(scaleAnimation);
+        scaleAnimation.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+                if (callback != null) {
+                    callback.start();
+                }
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                if (callback != null) {
+                    callback.end();
+                }
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+        return scaleAnimation;
+
     }
 
 }

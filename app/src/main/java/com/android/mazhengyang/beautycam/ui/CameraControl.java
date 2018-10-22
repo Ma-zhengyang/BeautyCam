@@ -10,13 +10,14 @@ import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 
-import com.android.mazhengyang.beautycam.CameraActivity;
+import com.android.mazhengyang.beautycam.R;
 
 import java.io.IOException;
 import java.util.List;
@@ -30,17 +31,11 @@ public class CameraControl implements ICameraControl {
     private static final String TAG = CameraControl.class.getSimpleName();
 
     private int displayOrientation = 0;
-    /**
-     * 垂直方向
-     */
+    //垂直方向
     public static final int ORIENTATION_PORTRAIT = 0;
-    /**
-     * 水平方向
-     */
+    //水平方向
     public static final int ORIENTATION_HORIZONTAL = 90;
-    /**
-     * 水平翻转方向
-     */
+    //水平翻转方向
     public static final int ORIENTATION_INVERT = 270;
 
     private Context context;
@@ -55,21 +50,31 @@ public class CameraControl implements ICameraControl {
     private boolean mOrientationResize;
     private boolean mPrevOrientationResize;
 
+    private boolean focusing = false;
+
     private Matrix mMatrix = null;
     private float mAspectRatio = 4f / 3f; // 支持预览的尺寸，长宽比
     private boolean mAspectRatioResize;
 
-    private TextureView mTextureView;
-    private SurfaceTexture surfaceCache;
+    private Handler mHandler = new Handler();
+
+    private TextureView textureView;
+    private SurfaceTexture surfaceTexture;
     private Camera.Parameters parameters;
 
     private ICameraControl.CameraControlCallback callback;
 
     public CameraControl(Context context, TextureView textureView) {
         this.context = context;
-        mTextureView = textureView;
+        this.textureView = textureView;
         textureView.setSurfaceTextureListener(surfaceTextureListener);
-        textureView.addOnLayoutChangeListener(layoutListener);
+        textureView.addOnLayoutChangeListener(layoutChangeListener);
+        textureView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startAutoFocus();
+            }
+        });
     }
 
     @Override
@@ -126,12 +131,53 @@ public class CameraControl implements ICameraControl {
     }
 
     @Override
-    public void reverseCamera() {
+    public void reverse() {
         stop();
         if (cameraId == Camera.CameraInfo.CAMERA_FACING_BACK) {
             initCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
         } else {
             initCamera(Camera.CameraInfo.CAMERA_FACING_BACK);
+        }
+    }
+
+    @Override
+    public void updateFlashMode() {
+        if (camera == null || parameters == null
+                || parameters.getSupportedFlashModes() == null) {
+            if (callback != null) {
+                callback.turnLight(-1);
+            }
+            return;
+        }
+
+        String mode = parameters.getFlashMode();
+        Log.d(TAG, "updateFlashMode: mode=" + mode);
+        List<String> supportedModes = parameters.getSupportedFlashModes();
+        if (Camera.Parameters.FLASH_MODE_OFF.equals(mode)
+                && supportedModes.contains(Camera.Parameters.FLASH_MODE_AUTO)) {
+            Log.d(TAG, "updateFlashMode: set to FLASH_MODE_AUTO");
+            parameters.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
+            camera.setParameters(parameters);
+            if (callback != null) {
+                callback.turnLight(R.drawable.ic_btn_flash_auto);
+            }
+        } else if (Camera.Parameters.FLASH_MODE_ON.equals(mode)) {
+            if (supportedModes.contains(Camera.Parameters.FLASH_MODE_OFF)) {
+                Log.d(TAG, "updateFlashMode: set to FLASH_MODE_OFF");
+                parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+                camera.setParameters(parameters);
+                if (callback != null) {
+                    callback.turnLight(R.drawable.ic_btn_flash_off);
+                }
+            }
+        } else if (Camera.Parameters.FLASH_MODE_AUTO.equals(mode)
+                && supportedModes.contains(Camera.Parameters.FLASH_MODE_ON)) {
+            Log.d(TAG, "updateFlashMode: set to FLASH_MODE_ON");
+            parameters.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
+            camera.setParameters(parameters);
+            if (callback != null) {
+                callback.turnLight(R.drawable.ic_btn_flash_on);
+            }
         }
     }
 
@@ -152,7 +198,6 @@ public class CameraControl implements ICameraControl {
                 try {
                     camera = Camera.open(facing);
                 } catch (Throwable e) {
-                    startPreview();
                     Log.e(TAG, "initCamera: " + e);
                     return;
                 }
@@ -165,7 +210,7 @@ public class CameraControl implements ICameraControl {
 
             setDisplayOrientation();
 
-            camera.setPreviewTexture(surfaceCache);
+            camera.setPreviewTexture(surfaceTexture);
 
             List<Camera.Size> previewSizes = parameters.getSupportedPreviewSizes();
             for (Camera.Size size : previewSizes) {
@@ -176,6 +221,14 @@ public class CameraControl implements ICameraControl {
 
             resizeForPreviewAspectRatio(parameters);
 
+            List<String> supportedModes = parameters.getSupportedFlashModes();
+            if (supportedModes.contains(Camera.Parameters.FLASH_MODE_AUTO)) {
+                parameters.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
+                if (callback != null) {
+                    callback.turnLight(R.drawable.ic_btn_flash_auto);
+                }
+            }
+
             startPreview();
 
         } catch (IOException e) {
@@ -183,7 +236,7 @@ public class CameraControl implements ICameraControl {
         }
     }
 
-    private View.OnLayoutChangeListener layoutListener = new View.OnLayoutChangeListener() {
+    private View.OnLayoutChangeListener layoutChangeListener = new View.OnLayoutChangeListener() {
         @Override
         public void onLayoutChange(View v, int left, int top, int right,
                                    int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
@@ -211,7 +264,7 @@ public class CameraControl implements ICameraControl {
         @Override
         public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
             Log.d(TAG, "onSurfaceTextureAvailable: ");
-            surfaceCache = surface;
+            surfaceTexture = surface;
             initCamera(cameraId);
 
             if (mPreviewWidth != 0 && mPreviewHeight != 0) {
@@ -228,7 +281,7 @@ public class CameraControl implements ICameraControl {
         @Override
         public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
             Log.d(TAG, "onSurfaceTextureDestroyed: ");
-            surfaceCache = null;
+            surfaceTexture = null;
             return false;
         }
 
@@ -242,20 +295,20 @@ public class CameraControl implements ICameraControl {
     }
 
     private void startAutoFocus() {
-        CameraThreadPool.createAutoFocusTimerTask(new Runnable() {
-            @Override
-            public void run() {
-                synchronized (CameraControl.this) {
-                    if (camera != null) {
-                        try {
-                            camera.autoFocus(mAutoFocusCallback);
-                        } catch (Throwable e) {
-                            // startPreview是异步实现，可能在某些机器上前几次调用会autofocus fail
-                        }
-                    }
-                }
+
+        if (!supportAutoFocus()) {
+            return;
+        }
+
+        if (camera != null && !focusing) {
+            try {
+                Log.d(TAG, "startAutoFocus run: ");
+                focusing = true;
+                camera.autoFocus(mAutoFocusCallback);
+            } catch (Throwable e) {
+                Log.d(TAG, "startAutoFocus: fail " + e);
             }
-        });
+        }
     }
 
     private void cancelAutoFocus() {
@@ -263,7 +316,7 @@ public class CameraControl implements ICameraControl {
             return;
         }
         camera.cancelAutoFocus();
-        CameraThreadPool.cancelAutoFocusTimer();
+        focusing = false;
     }
 
     private Camera.Size getOptimalPreviewSize(List<Camera.Size> sizes, int w, int h) {
@@ -325,7 +378,7 @@ public class CameraControl implements ICameraControl {
                 + mAspectRatio + "]");
         mAspectRatio = ratio;
         mAspectRatioResize = true;
-//        mTextureView.requestLayout();
+//        textureView.requestLayout();
     }
 
     private void cameraOrientationPreviewResize(boolean orientation) {
@@ -393,7 +446,7 @@ public class CameraControl implements ICameraControl {
     }
 
     private void setTransformMatrix(int width, int height) {
-        mMatrix = mTextureView.getTransform(mMatrix);
+        mMatrix = textureView.getTransform(mMatrix);
         float scaleX = 1f, scaleY = 1f;
         float scaledTextureWidth, scaledTextureHeight;
         if (mOrientationResize) {
@@ -417,7 +470,7 @@ public class CameraControl implements ICameraControl {
         scaleX = scaledTextureWidth / width;
         scaleY = scaledTextureHeight / height;
         mMatrix.setScale(scaleX, scaleY, (float) width / 2, (float) height / 2);
-        mTextureView.setTransform(mMatrix);
+        textureView.setTransform(mMatrix);
 
         // Calculate the new preview rectangle.
         RectF previewRect = new RectF(0, 0, width, height);
@@ -476,8 +529,7 @@ public class CameraControl implements ICameraControl {
                     new JpegPictureCallback());
 
         } catch (RuntimeException e) {
-            e.printStackTrace();
-            startPreview();
+            Log.e(TAG, "capture: fail " + e);
         }
     }
 
@@ -512,7 +564,18 @@ public class CameraControl implements ICameraControl {
             implements android.hardware.Camera.AutoFocusCallback {
         @Override
         public void onAutoFocus(boolean success, Camera camera) {
-            Log.d(TAG, "onAutoFocus: ");
+            Log.d(TAG, "onAutoFocus: success:" + success);
+            mHandler.postDelayed(runnable, 1000);
+            if (callback != null) {
+                callback.onFocus(success);
+            }
         }
     }
+
+    private Runnable runnable = new Runnable() {
+        @Override
+        public void run() {
+            focusing = false;
+        }
+    };
 }

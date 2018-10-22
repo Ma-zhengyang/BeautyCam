@@ -1,34 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:gravity="center_vertical"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="65dp"
+    android:layout_height="65dp"
+    android:background="@drawable/item_effect_filter_bg"
     android:padding="1dp">
 
-    <LinearLayout
-        android:id="@+id/small_filter_container"
-        android:layout_width="62dp"
-        android:layout_height="62dp"
-        android:background="@drawable/item_effect_filter_bg"
-        android:gravity="center">
-
-        <ImageView
-            android:id="@+id/small_filter"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:layout_gravity="center"
-            android:contentDescription="@null"
-            android:scaleType="fitCenter" />
-    </LinearLayout>
+    <ImageView
+        android:id="@+id/small_filter"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_centerInParent="true"
+        android:layout_gravity="center"
+        android:contentDescription="@null"
+        android:scaleType="fitCenter" />
 
     <TextView
         android:id="@+id/filter_name"
         android:layout_width="62dp"
         android:layout_height="wrap_content"
-        android:layout_below="@id/small_filter_container"
-        android:layout_marginTop="2dp"
+        android:layout_gravity="bottom"
         android:gravity="center"
+        android:background="#66FFE4B5"
+        android:layout_alignParentBottom="true"
         android:textColor="@color/floralWhite"
         android:textSize="12sp" />
 
-</RelativeLayout>
+</FrameLayout>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <ImageView
+        android:id="@+id/btn_flash"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_alignParentLeft="true"
+        android:clickable="true"
+        android:onClick="onFlashClick"
+        android:padding="18dp"
+        android:src="@drawable/ic_btn_flash_auto" />
+
+</RelativeLayout>
