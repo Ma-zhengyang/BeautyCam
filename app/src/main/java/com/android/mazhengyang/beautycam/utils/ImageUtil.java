@@ -163,98 +163,13 @@ public class ImageUtil {
         return value;
     }
 
-    public static int calculateInSampleSize(
-            BitmapFactory.Options options, int reqWidth, int reqHeight) {
-        // Raw height and width of image
-        final int height = options.outHeight;
-        final int width = options.outWidth;
-        int inSampleSize = 1;
-
-        if (height > reqHeight || width > reqWidth) {
-
-            final int halfHeight = height / 2;
-            final int halfWidth = width / 2;
-            // Calculate the largest inSampleSize value that is a power of 2 and keeps both
-            // height and width larger than the requested height and width.
-            while ((halfHeight / inSampleSize) >= reqHeight
-                    && (halfWidth / inSampleSize) >= reqWidth) {
-                inSampleSize *= 2;
-            }
-        }
-
-        return inSampleSize;
-    }
-
-
-    public static Bitmap createBitmap(int effect, boolean waterMark, byte[] data) {
-
-        Log.d(TAG, "createBitmap: effect=" + effect);
-
-        Bitmap bitmap = createOriginal(data);
-
-        if (waterMark) {
-            bitmap = drawWaterMark(bitmap);
-        }
-
-        return colorMatrix.create(effect, bitmap);
-    }
-
-
-    public static Bitmap createOriginal(final byte[] data) {
-
-        final int rotation = getOrientation(data);
-
-        Log.d(TAG, "createBitmap: rotation=" + rotation);
-
-        // BitmapRegionDecoder不会将整个图片加载到内存。
-        BitmapRegionDecoder decoder = null;
-        try {
-            decoder = BitmapRegionDecoder.newInstance(data, 0, data.length, true);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        BitmapFactory.Options options = new BitmapFactory.Options();
-
-        // 最大图片大小。
-        int maxPreviewImageSize = 2560;
-        int size = Math.min(decoder.getWidth(), decoder.getHeight());
-        size = Math.min(size, maxPreviewImageSize);
-
-        options.inSampleSize = calculateInSampleSize(options, size, size);
-        options.inScaled = true;
-        options.inDensity = Math.max(options.outWidth, options.outHeight);
-        options.inTargetDensity = size;
-        options.inPreferredConfig = Bitmap.Config.RGB_565;
-        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, options);
-
-        if (rotation != 0) {
-            // 只能是裁剪完之后再旋转了。有没有别的更好的方案呢？
-            Matrix matrix = new Matrix();
-            matrix.postRotate(rotation);
-            Bitmap rotatedBitmap = Bitmap.createBitmap(
-                    bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
-            if (bitmap != rotatedBitmap) {
-                // 有时候 createBitmap会复用对象
-                bitmap.recycle();
-            }
-            bitmap = rotatedBitmap;
-        }
-
-        return bitmap;
-    }
-
-
-    /**
-     * @param src
-     * @return
-     */
-    private static Bitmap drawWaterMark(Bitmap src) {
+    //添加时间水印
+    public static Bitmap drawWaterMark(Bitmap src) {
 
         int width = src.getWidth();
         int height = src.getHeight();
 
-        Log.d(TAG, "addWaterMark: width=" + width + ", height=" + height);
+        Log.d(TAG, "drawWaterMark: width=" + width + ", height=" + height);
 
         Bitmap newBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         Canvas mCanvas = new Canvas(newBitmap);
@@ -268,19 +183,47 @@ public class ImageUtil {
         textPaint.setColor(Color.GRAY);
         textPaint.setTextSize(CameraApplicaton.dip2px(20.0f));
         float textWidth = textPaint.measureText(time, 0, time.length());
-        Log.d(TAG, "addWaterMark: time=" + time + ", textWidth=" + textWidth);
+        Log.d(TAG, "drawWaterMark: time=" + time + ", textWidth=" + textWidth);
         mCanvas.drawText(time, width - textWidth - 10, height - 10, textPaint);
 
         mCanvas.save(Canvas.ALL_SAVE_FLAG);
         mCanvas.restore();
 
         if (!src.isRecycled()) {
-            Log.d(TAG, "addWaterMark: recycle bitmap");
+            Log.d(TAG, "drawWaterMark: recycle bitmap");
             src.recycle();
         }
 
         return newBitmap;
+    }
 
+    //获取原图
+    public static Bitmap getOriginalBitmap(final byte[] data) {
+
+        final int rotation = getOrientation(data);
+
+        Log.d(TAG, "createOriginal: rotation=" + rotation);
+
+        BitmapFactory.Options opts = new BitmapFactory.Options();
+        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, opts);
+
+        if (rotation != 0) {
+            Matrix matrix = new Matrix();
+            matrix.postRotate(rotation);
+            Bitmap rotatedBitmap = Bitmap.createBitmap(
+                    bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
+            if (bitmap != rotatedBitmap) {
+                bitmap.recycle();
+            }
+            bitmap = rotatedBitmap;
+        }
+
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+
+        Log.d(TAG, "getOriginalBitmap: width=" + width + ", height=" + height);
+
+        return bitmap;
     }
 
     //得到指定大小的Bitmap对象
@@ -288,12 +231,12 @@ public class ImageUtil {
 
         final int rotation = getOrientation(data);
 
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true;
-        options.outWidth = width;
-        options.outHeight = height;
-        options.inJustDecodeBounds = false;
-        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, options);
+        BitmapFactory.Options opts = new BitmapFactory.Options();
+        opts.inJustDecodeBounds = true;//true,不分配空间,但可计算出原始图片的长度和宽度,
+        opts.outWidth = width;
+        opts.outHeight = height;
+        opts.inJustDecodeBounds = false;
+        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, opts);
 
         if (rotation != 0) {
             // 只能是裁剪完之后再旋转了。有没有别的更好的方案呢？

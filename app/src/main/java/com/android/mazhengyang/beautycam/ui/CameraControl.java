@@ -3,6 +3,7 @@ package com.android.mazhengyang.beautycam.ui;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.ImageFormat;
@@ -17,8 +18,6 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 
-import com.android.mazhengyang.beautycam.R;
-
 import java.io.IOException;
 import java.util.List;
 
@@ -29,6 +28,8 @@ import java.util.List;
 public class CameraControl implements ICameraControl {
 
     private static final String TAG = CameraControl.class.getSimpleName();
+
+    private static final String PREF_KEY = "preference";
 
     private int displayOrientation = 0;
     //垂直方向
@@ -141,44 +142,60 @@ public class CameraControl implements ICameraControl {
     }
 
     @Override
-    public void updateFlashMode() {
-        if (camera == null || parameters == null
-                || parameters.getSupportedFlashModes() == null) {
-            if (callback != null) {
-                callback.turnLight(-1);
-            }
+    public void updateFlash() {
+        Camera.Parameters parameters = camera.getParameters();
+        List<String> supportedModes = parameters.getSupportedFlashModes();
+
+        if (camera == null || parameters == null || supportedModes == null) {
+            Log.d(TAG, "updateFlash: camera or parameters or flash modes is null");
             return;
         }
 
-        String mode = parameters.getFlashMode();
-        Log.d(TAG, "updateFlashMode: mode=" + mode);
-        List<String> supportedModes = parameters.getSupportedFlashModes();
-        if (Camera.Parameters.FLASH_MODE_OFF.equals(mode)
-                && supportedModes.contains(Camera.Parameters.FLASH_MODE_AUTO)) {
-            Log.d(TAG, "updateFlashMode: set to FLASH_MODE_AUTO");
-            parameters.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
-            camera.setParameters(parameters);
-            if (callback != null) {
-                callback.turnLight(R.drawable.ic_btn_flash_auto);
+        String current = parameters.getFlashMode();
+        Log.d(TAG, "updateFlash: current mode=" + current);
+
+        String target = null;
+
+        if (current.equals(Camera.Parameters.FLASH_MODE_OFF)) {
+
+            if (supportedModes.contains(Camera.Parameters.FLASH_MODE_AUTO)) {
+                target = Camera.Parameters.FLASH_MODE_AUTO;
+            } else if (supportedModes.contains(Camera.Parameters.FLASH_MODE_ON)) {
+                target = Camera.Parameters.FLASH_MODE_ON;
             }
-        } else if (Camera.Parameters.FLASH_MODE_ON.equals(mode)) {
+
+        } else if (current.equals(Camera.Parameters.FLASH_MODE_ON)) {
+
             if (supportedModes.contains(Camera.Parameters.FLASH_MODE_OFF)) {
-                Log.d(TAG, "updateFlashMode: set to FLASH_MODE_OFF");
-                parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
-                camera.setParameters(parameters);
-                if (callback != null) {
-                    callback.turnLight(R.drawable.ic_btn_flash_off);
-                }
+                target = Camera.Parameters.FLASH_MODE_OFF;
+            } else if (supportedModes.contains(Camera.Parameters.FLASH_MODE_AUTO)) {
+                target = Camera.Parameters.FLASH_MODE_AUTO;
             }
-        } else if (Camera.Parameters.FLASH_MODE_AUTO.equals(mode)
-                && supportedModes.contains(Camera.Parameters.FLASH_MODE_ON)) {
-            Log.d(TAG, "updateFlashMode: set to FLASH_MODE_ON");
-            parameters.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
-            camera.setParameters(parameters);
-            if (callback != null) {
-                callback.turnLight(R.drawable.ic_btn_flash_on);
+
+        } else if (current.equals(Camera.Parameters.FLASH_MODE_AUTO)) {
+
+            if (supportedModes.contains(Camera.Parameters.FLASH_MODE_ON)) {
+                target = Camera.Parameters.FLASH_MODE_ON;
+            } else if (supportedModes.contains(Camera.Parameters.FLASH_MODE_OFF)) {
+                target = Camera.Parameters.FLASH_MODE_OFF;
             }
         }
+
+        if (target != null) {
+            Log.d(TAG, "updateFlashMode: set to " + target);
+            parameters.setFlashMode(target);
+            camera.setParameters(parameters);
+            if (callback != null) {
+                callback.updateFlashIcon(target);
+            }
+        } else {
+            Log.d(TAG, "updateFlash: target is null");
+        }
+
+        SharedPreferences mPreference = context.getSharedPreferences(PREF_KEY, Activity.MODE_PRIVATE);
+        SharedPreferences.Editor mEditor = mPreference.edit();
+        mEditor.putString(String.valueOf(cameraId), target);
+        mEditor.commit();
     }
 
     private void initCamera(int facing) {
@@ -206,6 +223,8 @@ public class CameraControl implements ICameraControl {
             if (parameters == null) {
                 parameters = camera.getParameters();
                 parameters.setPreviewFormat(ImageFormat.NV21);
+
+                initFlashFirstTime();
             }
 
             setDisplayOrientation();
@@ -221,18 +240,41 @@ public class CameraControl implements ICameraControl {
 
             resizeForPreviewAspectRatio(parameters);
 
-            List<String> supportedModes = parameters.getSupportedFlashModes();
-            if (supportedModes.contains(Camera.Parameters.FLASH_MODE_AUTO)) {
-                parameters.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
-                if (callback != null) {
-                    callback.turnLight(R.drawable.ic_btn_flash_auto);
-                }
-            }
-
             startPreview();
 
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void initFlashFirstTime() {
+        List<String> supportedModes = parameters.getSupportedFlashModes();
+        if (supportedModes != null) {
+            if (!supportedModes.contains(Camera.Parameters.FLASH_MODE_AUTO)
+                    && !supportedModes.contains(Camera.Parameters.FLASH_MODE_ON)
+                    && !supportedModes.contains(Camera.Parameters.FLASH_MODE_OFF)) {
+                if (callback != null) {
+                    callback.updateFlashIcon(null);
+                }
+            } else {
+                SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_KEY, Activity.MODE_PRIVATE);
+                String current = sharedPreferences.getString(String.valueOf(cameraId),
+                        Camera.Parameters.FLASH_MODE_AUTO);
+                Log.d(TAG, "initFlashFirstTime: current=" + current);
+
+                if (supportedModes.contains(current)) {
+                    parameters.setFlashMode(current);
+                    camera.setParameters(parameters);
+                    if (callback != null) {
+                        callback.updateFlashIcon(current);
+                    }
+                }
+            }
+
+        } else {
+            if (callback != null) {
+                callback.updateFlashIcon(null);
+            }
         }
     }
 
@@ -505,15 +547,23 @@ public class CameraControl implements ICameraControl {
         }
 
         try {
+
+            Camera.Size picSize = null;
+
             //setPictureSize必须放在setRotation后面
             List<Camera.Size> pictureSizes = camera.getParameters().getSupportedPictureSizes();
-            for (Camera.Size size : pictureSizes) {
+            for (Camera.Size size : pictureSizes) {//相机图片宽高和屏幕宽高刚好相反
                 Log.d(TAG, "takePicture: getSupportedPictureSizes " + size.width + "x" + size.height);
+                if (mPreviewWidth == size.height && mPreviewHeight == size.width) {
+                    picSize = size;
+                }
             }
 
-            Camera.Size picSize = getOptimalPreviewSize(pictureSizes, mPreviewWidth, mPreviewHeight);
+            if (picSize == null) {
+                picSize = pictureSizes.get(0);//最大尺寸
+            }
 
-            Log.d(TAG, "takePicture: getOptimalSize " + picSize.width + "x" + picSize.height);
+            Log.d(TAG, "takePicture: picSize=" + picSize.width + "x" + picSize.height);
 
             parameters.setPictureSize(picSize.width, picSize.height);
 
@@ -567,7 +617,7 @@ public class CameraControl implements ICameraControl {
             Log.d(TAG, "onAutoFocus: success:" + success);
             mHandler.postDelayed(runnable, 1000);
             if (callback != null) {
-                callback.onFocus(success);
+                callback.updateFocusRect(success);
             }
         }
     }

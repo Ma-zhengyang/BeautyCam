@@ -10,8 +10,8 @@ public interface ICameraControl {
     interface CameraControlCallback {
 
         void onPictureTaken(byte[] data);
-        void onFocus(boolean success);
-        void turnLight(int drawable);
+        void updateFocusRect(boolean success);
+        void updateFlashIcon(String mode);
     }
 
     void setCallback(CameraControlCallback callback);
@@ -25,5 +25,5 @@ public interface ICameraControl {
     //前后摄像切换
     void reverse();
     //闪光灯
-    void updateFlashMode();
+    void updateFlash();
 }

@@ -22,7 +22,7 @@ public class AnimationUtil {
     public AnimationUtil() {
     }
 
-    public AnimatorSet rotateAnimators(View view) {
+    public void playRotate(View view) {
 
         PropertyValuesHolder rotation = PropertyValuesHolder.ofFloat("rotation", 0f, 360f);
         ObjectAnimator objectAnimator = ObjectAnimator.ofPropertyValuesHolder(view, rotation);
@@ -30,8 +30,7 @@ public class AnimationUtil {
         AnimatorSet animatorSet = new AnimatorSet();
         animatorSet.play(objectAnimator);
         animatorSet.setDuration(500);
-
-        return animatorSet;
+        animatorSet.start();
     }
 
     public void playSaveImage(View view, final AnimationCallback callback) {
@@ -87,7 +86,7 @@ public class AnimationUtil {
         animatorSet.start();
     }
 
-    public AnimatorSet hideAnimators(View view) {
+    public void hideAnimators(View view) {
 
         PropertyValuesHolder alpha = PropertyValuesHolder.ofFloat("alpha", 1.0f, 0.0f);
         ObjectAnimator objectAnimator = ObjectAnimator.ofPropertyValuesHolder(view, alpha);
@@ -96,11 +95,10 @@ public class AnimationUtil {
         animatorSet.play(objectAnimator);
         animatorSet.setInterpolator(new AccelerateInterpolator());
         animatorSet.setDuration(500);
-
-        return animatorSet;
+        animatorSet.start();
     }
 
-    public AnimatorSet showAnimators(View view) {
+    public void showAnimators(View view) {
 
         PropertyValuesHolder scaleX = PropertyValuesHolder.ofFloat("scaleX", 0.0f, 1.0f);
         PropertyValuesHolder scaleY = PropertyValuesHolder.ofFloat("scaleY", 0.0f, 1.0f);
@@ -111,8 +109,7 @@ public class AnimationUtil {
         animatorSet.play(objectAnimator);
         animatorSet.setInterpolator(new AccelerateInterpolator());
         animatorSet.setDuration(500);
-
-        return animatorSet;
+        animatorSet.start();
     }
 
     public Animation playScale(final View view, final AnimationCallback callback) {

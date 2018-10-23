@@ -1,12 +1,12 @@
 package com.android.mazhengyang.beautycam;
 
 import android.Manifest;
-import android.animation.AnimatorSet;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Point;
+import android.hardware.Camera;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -17,14 +17,13 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.android.mazhengyang.beautycam.ui.animation.AnimationUtil;
 import com.android.mazhengyang.beautycam.ui.CameraControl;
-import com.android.mazhengyang.beautycam.ui.widget.GalleryButton;
 import com.android.mazhengyang.beautycam.ui.ICameraControl;
 import com.android.mazhengyang.beautycam.ui.animation.AnimationCallback;
+import com.android.mazhengyang.beautycam.ui.animation.AnimationUtil;
+import com.android.mazhengyang.beautycam.ui.widget.GalleryButton;
 import com.android.mazhengyang.beautycam.utils.DataBuffer;
 import com.android.mazhengyang.beautycam.utils.store.MediaSaver;
-import com.android.mazhengyang.beautycam.utils.Sobel;
 import com.android.mazhengyang.beautycam.utils.store.StoreCallback;
 
 import java.text.SimpleDateFormat;
@@ -82,7 +81,7 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
         Log.d(TAG, "onCreate: display size=" + size.x + "x" + size.y);
         Log.d(TAG, "onCreate: display density=" + density);
 
-        final TextureView textureView = findViewById(R.id.camera_textureview);
+        TextureView textureView = findViewById(R.id.camera_textureview);
         cameraControl = new CameraControl(this, textureView);
         cameraControl.setCallback(this);
 
@@ -90,14 +89,8 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
         mMediaSaver = new MediaSaver();
 
         galleryBtn.loadLatest(this);
-        shutterBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                onShutterClick(v);
-            }
-        });
 
-        if (!checkPermission()) {
+        if (!hasCameraPermission()) {
             onRequestCameraPermission();
         }
     }
@@ -128,17 +121,168 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
 //        DataBuffer.cleanBitmap(); //do in Storage
     }
 
-    private boolean checkPermission() {
+    @Override
+    public void onBackPressed() {
+        if (isState(STATE_TAKING)) {
+            cameraControl.start();
+            shutterBtn.setEnabled(true);
+            reverseBtn.setEnabled(true);
+            setState(STATE_IDLE);
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+//    private byte[] bitmap2bytes(){
+//        Bitmap bmp = BitmapFactory.decodeResource(getResources(), R.drawable.);
+//        ByteArrayOutputStream bs = new ByteArrayOutputStream();
+//        bmp.compress(Bitmap.CompressFormat.PNG, 100, bs);
+//        return bs.toByteArray();
+//    }
+
+    @Override
+    public void updateFlashIcon(String mode) {
+        flashBtn.setVisibility(mode != null ? View.VISIBLE : View.GONE);
+
+        if (mode.equals(Camera.Parameters.FLASH_MODE_AUTO)) {
+            flashBtn.setImageResource(R.drawable.ic_btn_flash_auto);
+        } else if (mode.equals(Camera.Parameters.FLASH_MODE_ON)) {
+            flashBtn.setImageResource(R.drawable.ic_btn_flash_on);
+        } else if (mode.equals(Camera.Parameters.FLASH_MODE_OFF)) {
+            flashBtn.setImageResource(R.drawable.ic_btn_flash_off);
+        }
+    }
+
+    @Override
+    public void updateFocusRect(final boolean success) {
+        mAnimationUtil.playScale(focusView, new AnimationCallback() {
+            @Override
+            public void start() {
+                focusView.setBackground(getDrawable(R.drawable.camera_focus_start));
+            }
+
+            @Override
+            public void end() {
+                if (success) {
+                    focusView.setBackground(getDrawable(R.drawable.camera_focus_success));
+                } else {
+                    focusView.setBackground(getDrawable(R.drawable.camera_focus_fail));
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onPictureTaken(final byte[] data) {
+        if (isState(STATE_TAKING)) {
+            DataBuffer.setByteArray(data);
+            Intent intent = new Intent(this, BeautifyPhotoActivity.class);
+            startActivityForResult(intent, REQUEST_BEAYTIFY_PHOTO);
+            //  startActivity(intent);
+        } else {
+            Log.d(TAG, "onPictureTaken: interrupt, mState =" + mState);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Log.d(TAG, "onActivityResult: ");
+        switch (requestCode) {
+            case REQUEST_BEAYTIFY_PHOTO: {
+                Bitmap bitmap = DataBuffer.getBitmap();
+                if (bitmap != null) {
+                    playStorePhotoAnim(bitmap);
+                }
+                break;
+            }
+        }
+    }
+
+    private void setState(int state) {
+        mState = state;
+    }
+
+    private boolean isState(int state) {
+        return mState == state;
+    }
+
+    private void playStorePhotoAnim(final Bitmap b) {
+        Log.d(TAG, "playStorePhotoAnim: ");
+
+        mAnimationUtil.playSaveImage(snapView,
+                new AnimationCallback() {
+                    @Override
+                    public void start() {
+                        Log.d(TAG, "start: ");
+                        snapView.setImageBitmap(b);
+                        snapView.setVisibility(View.VISIBLE);
+                        cameraControl.start();
+                    }
+
+                    @Override
+                    public void end() {
+                        Log.d(TAG, "end: ");
+                        snapView.setVisibility(View.INVISIBLE);
+                        snapView.setImageBitmap(null);
+                        setState(STATE_IDLE);
+                        storeImage(b);
+                    }
+                });
+    }
+
+    public void onShutterClick(View view) {
+        if (isState(STATE_IDLE)) {
+            setState(STATE_TAKING);
+            cameraControl.capture();
+        }
+    }
+
+    public void onReverseClick(View view) {
+        if (isState(STATE_IDLE)) {
+            mAnimationUtil.playRotate(reverseBtn);
+            cameraControl.reverse();
+        }
+    }
+
+    public void onFlashClick(View view) {
+        if (isState(STATE_IDLE)) {
+            cameraControl.updateFlash();
+        }
+    }
+
+    private void storeImage(Bitmap bitmap) {
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd_HHmmss");
+        Date d = new Date(System.currentTimeMillis());
+        String title = "IMG_" + format.format(d);
+        Log.d(TAG, "storeImage: title = " + title);
+        mMediaSaver.addImage(bitmap, title, new StoreCallback() {
+            @Override
+            public void success() {
+                Log.d(TAG, "storeImage success: ");
+                DataBuffer.cleanBitmap();
+                galleryBtn.loadLatest(CameraActivity.this);
+            }
+
+            @Override
+            public void fail() {
+                Log.d(TAG, "storeImage fail: ");
+                DataBuffer.cleanBitmap();
+            }
+        });
+    }
+
+    private boolean hasCameraPermission() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 == PackageManager.PERMISSION_GRANTED) {
             return true;
         } else {
-            Log.d(TAG, "checkPermission: not camera permission");
+            Log.d(TAG, "hasCameraPermission: not camera permission");
             return false;
         }
     }
 
-    public boolean onRequestCameraPermission() {
+    private boolean onRequestCameraPermission() {
         Log.d(TAG, "onRequestStoragePermission: ");
         ActivityCompat.requestPermissions(CameraActivity.this,
                 new String[]{Manifest.permission.CAMERA},
@@ -193,154 +337,6 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
             default:
                 break;
         }
-    }
-
-    private void setState(int state) {
-        mState = state;
-    }
-
-    private boolean isState(int state) {
-        return mState == state;
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (isState(STATE_TAKING)) {
-            Sobel.setStop(true);
-            cameraControl.start();
-            shutterBtn.setEnabled(true);
-            reverseBtn.setEnabled(true);
-            setState(STATE_IDLE);
-        } else {
-            super.onBackPressed();
-        }
-    }
-
-//    private byte[] bitmap2bytes(){
-//        Bitmap bmp = BitmapFactory.decodeResource(getResources(), R.drawable);
-//        ByteArrayOutputStream bs = new ByteArrayOutputStream();
-//        bmp.compress(Bitmap.CompressFormat.PNG, 100, bs);
-//        return bs.toByteArray();
-//    }
-
-    @Override
-    public void onFocus(final boolean success) {
-        mAnimationUtil.playScale(focusView, new AnimationCallback() {
-            @Override
-            public void start() {
-                focusView.setBackground(getDrawable(R.drawable.camera_focus_start));
-            }
-
-            @Override
-            public void end() {
-                if (success) {
-                    focusView.setBackground(getDrawable(R.drawable.camera_focus_success));
-                } else {
-                    focusView.setBackground(getDrawable(R.drawable.camera_focus_fail));
-                }
-            }
-        });
-    }
-
-    @Override
-    public void turnLight(int drawable) {
-        if (drawable == -1) {
-            flashBtn.setVisibility(View.INVISIBLE);
-        } else {
-            flashBtn.setVisibility(View.VISIBLE);
-            flashBtn.setImageResource(drawable);
-        }
-    }
-
-    @Override
-    public void onPictureTaken(final byte[] data) {
-        if (isState(STATE_TAKING)) {
-            DataBuffer.setByteArray(data);
-            Intent intent = new Intent(this, BeautifyPhotoActivity.class);
-            startActivityForResult(intent, REQUEST_BEAYTIFY_PHOTO);
-            //  startActivity(intent);
-        } else {
-            Log.d(TAG, "onPictureTaken: interrupt, mState =" + mState);
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        Log.d(TAG, "onActivityResult: ");
-        switch (requestCode) {
-            case REQUEST_BEAYTIFY_PHOTO: {
-                Bitmap bitmap = DataBuffer.getBitmap();
-                if (bitmap != null) {
-                    playStorePhotoAnim(bitmap);
-                }
-                break;
-            }
-        }
-    }
-
-    private void playStorePhotoAnim(final Bitmap b) {
-        Log.d(TAG, "playStorePhotoAnim: ");
-
-        mAnimationUtil.playSaveImage(snapView,
-                new AnimationCallback() {
-                    @Override
-                    public void start() {
-                        Log.d(TAG, "start: ");
-                        snapView.setImageBitmap(b);
-                        snapView.setVisibility(View.VISIBLE);
-                        cameraControl.start();
-                    }
-
-                    @Override
-                    public void end() {
-                        Log.d(TAG, "end: ");
-                        snapView.setVisibility(View.INVISIBLE);
-                        snapView.setImageBitmap(null);
-                        setState(STATE_IDLE);
-                        storeImage(b);
-                    }
-                });
-    }
-
-    private void onShutterClick(View view) {
-        if (isState(STATE_IDLE)) {
-            setState(STATE_TAKING);
-            cameraControl.capture();
-        }
-    }
-
-    public void onReverseClick(View view) {
-        if (isState(STATE_IDLE)) {
-            AnimatorSet animatorSet = mAnimationUtil.rotateAnimators(reverseBtn);
-            animatorSet.start();
-            cameraControl.reverse();
-        }
-    }
-
-    public void onFlashClick(View view) {
-        cameraControl.updateFlashMode();
-    }
-
-    private void storeImage(Bitmap bitmap) {
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd_HHmmss");
-        Date d = new Date(System.currentTimeMillis());
-        String title = "IMG_" + format.format(d);
-        Log.d(TAG, "storeImage: title = " + title);
-        mMediaSaver.addImage(bitmap, title, new StoreCallback() {
-            @Override
-            public void success() {
-                Log.d(TAG, "storeImage success: ");
-                DataBuffer.cleanBitmap();
-                galleryBtn.loadLatest(CameraActivity.this);
-            }
-
-            @Override
-            public void fail() {
-                Log.d(TAG, "storeImage fail: ");
-                DataBuffer.cleanBitmap();
-            }
-        });
     }
 
 }

@@ -47,7 +47,8 @@ public class LoadImageTask {
 
                 if (data != null) {
                     if (isOriginal) {
-                        bitmap = ImageUtil.createOriginal(data);
+                        bitmap = ImageUtil.getOriginalBitmap(data);
+                        bitmap = ImageUtil.drawWaterMark(bitmap);
                     } else {
                         bitmap = ImageUtil.getResizedBitmap(data, width, height);
                     }
