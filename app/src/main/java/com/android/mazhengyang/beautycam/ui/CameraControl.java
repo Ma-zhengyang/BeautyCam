@@ -18,6 +18,8 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 
+import com.android.mazhengyang.beautycam.CameraApplicaton;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -123,6 +125,8 @@ public class CameraControl implements ICameraControl {
             camera.startPreview();
             startAutoFocus();
         }
+
+        CameraApplicaton.getAnim().playPreview(textureView);
     }
 
     private void stopPreview() {

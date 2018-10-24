@@ -50,7 +50,6 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
     private int mState = STATE_IDLE;
 
     private ICameraControl cameraControl;
-    private AnimationUtil mAnimationUtil;
     private MediaSaver mMediaSaver;
 
     @BindView(R.id.snap_view)
@@ -85,7 +84,6 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
         cameraControl = new CameraControl(this, textureView);
         cameraControl.setCallback(this);
 
-        mAnimationUtil = new AnimationUtil();
         mMediaSaver = new MediaSaver();
 
         galleryBtn.loadLatest(this);
@@ -155,7 +153,7 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
 
     @Override
     public void updateFocusRect(final boolean success) {
-        mAnimationUtil.playScale(focusView, new AnimationCallback() {
+        CameraApplicaton.getAnim().playScale(focusView, new AnimationCallback() {
             @Override
             public void start() {
                 focusView.setBackground(getDrawable(R.drawable.camera_focus_start));
@@ -210,7 +208,7 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
     private void playStorePhotoAnim(final Bitmap b) {
         Log.d(TAG, "playStorePhotoAnim: ");
 
-        mAnimationUtil.playSaveImage(snapView,
+        CameraApplicaton.getAnim().playSaveImage(snapView,
                 new AnimationCallback() {
                     @Override
                     public void start() {
@@ -240,7 +238,7 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
 
     public void onReverseClick(View view) {
         if (isState(STATE_IDLE)) {
-            mAnimationUtil.playRotate(reverseBtn);
+            CameraApplicaton.getAnim().playRotate(reverseBtn);
             cameraControl.reverse();
         }
     }
