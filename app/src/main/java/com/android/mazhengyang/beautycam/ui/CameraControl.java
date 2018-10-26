@@ -342,7 +342,9 @@ public class CameraControl implements ICameraControl {
 
     private void startAutoFocus() {
 
+        Log.d(TAG, "startAutoFocus: ");
         if (!supportAutoFocus()) {
+            Log.d(TAG, "startAutoFocus: not support AutoFocus");
             return;
         }
 

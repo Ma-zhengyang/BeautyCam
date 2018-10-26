@@ -20,7 +20,6 @@ import android.widget.Toast;
 import com.android.mazhengyang.beautycam.ui.CameraControl;
 import com.android.mazhengyang.beautycam.ui.ICameraControl;
 import com.android.mazhengyang.beautycam.ui.animation.AnimationCallback;
-import com.android.mazhengyang.beautycam.ui.animation.AnimationUtil;
 import com.android.mazhengyang.beautycam.ui.widget.GalleryButton;
 import com.android.mazhengyang.beautycam.utils.DataBuffer;
 import com.android.mazhengyang.beautycam.utils.store.MediaSaver;
@@ -86,8 +85,6 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
 
         mMediaSaver = new MediaSaver();
 
-        galleryBtn.loadLatest(this);
-
         if (!hasCameraPermission()) {
             onRequestCameraPermission();
         }
@@ -99,6 +96,8 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
         super.onResume();
         setState(STATE_IDLE);
         cameraControl.start();
+
+        galleryBtn.loadLatest(this);
     }
 
     @Override
@@ -227,6 +226,13 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
                         storeImage(b);
                     }
                 });
+    }
+
+    public void onGalleryClick(View view) {
+        if (isState(STATE_IDLE)) {
+            Intent intent = new Intent(this, GalleryActivity.class);
+            startActivity(intent);
+        }
     }
 
     public void onShutterClick(View view) {

@@ -1,4 +1,4 @@
-package com.android.mazhengyang.beautycam.effect;
+package com.android.mazhengyang.beautycam.Bean;
 
 import android.content.Context;
 

@@ -94,7 +94,7 @@ public class GalleryButton extends android.support.v7.widget.AppCompatImageButto
             }
         }
 
-        if(target == null){
+        if (target == null) {
             return null;
         }
 
@@ -108,14 +108,20 @@ public class GalleryButton extends android.support.v7.widget.AppCompatImageButto
         Log.d(TAG, "loadLatest: ");
 
         if (!checkPermission(callback)) {
+            setImageBitmap(null);
+            setClickable(false);
             return;
         }
 
         String name = getLatestName();
 
-        if(name == null){
+        if (name == null) {
+            setImageBitmap(null);
+            setClickable(false);
             return;
         }
+
+        Log.d(TAG, "loadLatest: getMeasuredWidth()=" + getMeasuredWidth());
 
         new LoadImageTask().load(name, new LoadImageCallback() {
             @Override
@@ -123,6 +129,7 @@ public class GalleryButton extends android.support.v7.widget.AppCompatImageButto
                 Log.d(TAG, "callback: smallImageBackgroud=" + result);
                 if (result != null) {
                     setImageBitmap(result);
+                    setClickable(true);
                 }
             }
         }, getMeasuredWidth());

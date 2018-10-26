@@ -40,6 +40,11 @@ dependencies {
     implementation 'com.android.support:design:26.1.0'
     //LoadingAnimations
     compile 'com.example.mzy.indicators:LoadingAnimations:1.0.1'
+    //glide
+    compile 'com.github.bumptech.glide:glide:3.7.0'
     //GpuImage
-    compile project(":GpuImage")
+    compile project(':GpuImage')
+    //sweetalertdialog,AS升级到3.0后compile方式引入运行会crash，需把lib库文件下载下来，然后用model的方法导人到项目里
+    //compile 'cn.pedant.sweetalert:library:1.3'
+    compile project(':sweetalertdialog')
 }

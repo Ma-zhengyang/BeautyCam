@@ -12,8 +12,8 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.android.mazhengyang.beautycam.adapter.FilterAdapter;
-import com.android.mazhengyang.beautycam.effect.EffectBean;
-import com.android.mazhengyang.beautycam.effect.EffectFactory;
+import com.android.mazhengyang.beautycam.Bean.EffectBean;
+import com.android.mazhengyang.beautycam.utils.EffectFactory;
 import com.android.mazhengyang.beautycam.ui.widget.HorizontalListView;
 import com.android.mazhengyang.beautycam.utils.DataBuffer;
 import com.android.mazhengyang.beautycam.utils.LoadImageCallback;

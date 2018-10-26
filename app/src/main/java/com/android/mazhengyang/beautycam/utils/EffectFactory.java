@@ -1,9 +1,9 @@
-package com.android.mazhengyang.beautycam.effect;
+package com.android.mazhengyang.beautycam.utils;
 
 import android.content.Context;
 
+import com.android.mazhengyang.beautycam.Bean.EffectBean;
 import com.android.mazhengyang.beautycam.R;
-import com.android.mazhengyang.beautycam.utils.GPUImageFilterTools;
 
 import java.util.ArrayList;
 import java.util.List;

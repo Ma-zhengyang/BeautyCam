@@ -3,6 +3,15 @@
     <string name="app_name">BeautyCam</string>
     <string name="no_camera_permission">需要相机权限</string>
     <string name="no_storage_permission">需要读取存储设备权限</string>
+    <string name="photo_select_all">全选</string>
+    <string name="photo_select_cancel">取消</string>
+    <string name="photo_delete">删除</string>
+    <string name="photo_delete_title">确定删除？</string>
+    <string name="photo_delete_confirm">确定</string>
+    <string name="photo_delete_cancel">取消</string>
+    <string name="photo_delete_success">删除成功</string>
+    <string name="photo_delete_fail">删除失败</string>
+    <string name="photo_delete_sum">成功删除: %1$d，失败: %2$d</string>
 
     <string name="str_filger_normal">原始</string>
     <string name="str_filter_aimei">暧昧</string>

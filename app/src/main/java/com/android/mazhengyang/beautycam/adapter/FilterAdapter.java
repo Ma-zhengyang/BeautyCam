@@ -11,13 +11,12 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.android.mazhengyang.beautycam.R;
-import com.android.mazhengyang.beautycam.effect.EffectBean;
+import com.android.mazhengyang.beautycam.Bean.EffectBean;
 
 import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import jp.co.cyberagent.android.gpuimage.GPUImageView;
 
 /**
  * Created by mazhengyang on 18-10-17.
@@ -27,12 +26,12 @@ public class FilterAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     private static final String TAG = FilterAdapter.class.getSimpleName();
 
-    List<EffectBean> filterUris;
+    List<EffectBean> effectList;
     Context mContext;
     private Bitmap background;
 
-    public FilterAdapter(Context context, List<EffectBean> effects, Bitmap backgroud) {
-        filterUris = effects;
+    public FilterAdapter(Context context, List<EffectBean> list, Bitmap backgroud) {
+        effectList = list;
         mContext = context;
         this.background = backgroud;
     }
@@ -62,16 +61,16 @@ public class FilterAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
         Log.d(TAG, "onBindViewHolder: positon=" + position);
 
-        final EffectBean effect = filterUris.get(position);
+        final EffectBean bean = effectList.get(position);
 
-        if(effect.isChecked()){
+        if(bean.isChecked()){
             ((EffectHolder) holder).filterName.setTextColor(mContext.getResources().getColor(R.color.hotpink2));
         }else {
             ((EffectHolder) holder).filterName.setTextColor(mContext.getResources().getColor(R.color.floralWhite));
         }
 
-        ((EffectHolder) holder).filterImg.setImageResource(effect.getResImg());
-        ((EffectHolder) holder).filterName.setText(effect.getTitle());
+        ((EffectHolder) holder).filterImg.setImageResource(bean.getResImg());
+        ((EffectHolder) holder).filterName.setText(bean.getTitle());
     }
 
     @Override
@@ -81,8 +80,8 @@ public class FilterAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     @Override
     public int getItemCount() {
-        Log.d(TAG, "getItemCount: " + filterUris.size());
-        return filterUris.size();
+        Log.d(TAG, "getItemCount: " + effectList.size());
+        return effectList.size();
     }
 
     public class EffectHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
@@ -94,7 +93,7 @@ public class FilterAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
         public EffectHolder(View itemView) {
             super(itemView);
-            setIsRecyclable(false);
+//            setIsRecyclable(false);
             ButterKnife.bind(this, itemView);
             itemView.setOnClickListener(this);
         }

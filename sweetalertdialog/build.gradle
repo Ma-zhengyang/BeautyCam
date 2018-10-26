@@ -1,0 +1,26 @@
+apply plugin: 'com.android.library'
+
+//version = VERSION_NAME
+//group = GROUP
+
+android {
+//    compileSdkVersion rootProject.ext.compileSdkVersion
+//    buildToolsVersion rootProject.ext.buildToolsVersion
+    compileSdkVersion 26
+
+    defaultConfig {
+       //minSdkVersion 9
+        minSdkVersion 24
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+    buildToolsVersion '26.0.2'
+}
+
+dependencies {
+    compile 'com.pnikosis:materialish-progress:1.0'
+}
+
+//apply from: 'https://raw.github.com/chrisbanes/gradle-mvn-push/master/gradle-mvn-push.gradle'
