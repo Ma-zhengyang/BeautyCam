@@ -139,7 +139,11 @@ public class CameraActivity extends Activity implements ICameraControl.CameraCon
 
     @Override
     public void updateFlashIcon(String mode) {
-        flashBtn.setVisibility(mode != null ? View.VISIBLE : View.GONE);
+        if(mode == null){
+            flashBtn.setVisibility(View.GONE);
+            return;
+        }
+        flashBtn.setVisibility(View.VISIBLE);
 
         if (mode.equals(Camera.Parameters.FLASH_MODE_AUTO)) {
             flashBtn.setImageResource(R.drawable.ic_btn_flash_auto);
